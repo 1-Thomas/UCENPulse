@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="navbar"></div>
+
+
+
+
+    <section id="steps_section">
+        <h2>Steps</h2>
+        <label for="steps">Please insert your daily step amount</label>
+        <br><br>
+        <input  id="steps" name="steps">
+        <button id="saveBtn1">Save Data</button>
+    </section>
+
+    <section id="calories_section">
+        <h2>Calaries Burned</h2>
+        <label for="steps">Please insert the amount of calaries you have burned today</label>
+        <br><br>
+        <input id="calories" name="steps">
+        <button id="saveBtn2">Save Data</button>
+    </section>
+
+    <section id="water_intake">
+        <h2>Water Intake</h2>
+        <label for="steps">Please insert the amount of water you have drank today</label>
+        <br><br>
+        <input id="water" name="water">
+        <span>ml</span>
+        <button id="saveBtn3">Save Data</button>
+    </section>
+
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navbar').innerHTML = data;
+
+            
+                const script = document.createElement("script");
+                script.src = "app.js";
+                document.body.appendChild(script);
+            });
+    </script>
+
+
+  
+</body>
+
+</html>

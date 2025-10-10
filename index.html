@@ -5,44 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <h1>UCENPulse</h1>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        .navbar {
-            display: flex;
-            background-color: #333;
-            padding: 10px;
-        }
-
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            padding: 14px 20px;
-        }
-
-        .navbar a:hover {
-            background-color: #575757;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="navbar">
-        <a href="index.html">Home</a>
-        <a href="daily_activites.html">Daily Activties</a>
-        <a href="">Health Metrics</a>
-    </div>
     
+
     <section id="Health Metrics Tracker">
 
 
     </section>
 
+
+</head>
+
+<body>
+    <div id="navbar"></div>
+    <script>
+        fetch('navbar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navbar').innerHTML = data;
+            });
+    </script>
+
     <script src="app.js"></script>
 </body>
+
+
 
 </html>
