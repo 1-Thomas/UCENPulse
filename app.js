@@ -1,10 +1,59 @@
+
+function drawChart() {
+  const ctx = document.getElementById('stepsChart').getContext('2d');
+  const stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
+
+  const dates = stepsList.map(entry => entry.date);
+  const values = stepsList.map(entry => entry.value);
+
+  new Chart(ctx, {
+    type: 'line', 
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Daily Steps',
+        data: values,
+        borderWidth: 2.5,
+        borderColor: 'blue',
+        backgroundColor: 'lightblue',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+
+window.addEventListener('load', drawChart);
+
+
 document.getElementById("saveBtn1").addEventListener("click", function () {
   const steps = document.getElementById("steps").value;
   const dateSaved = new Date().toLocaleDateString();
-  const stepsData = { value: steps, date: dateSaved };
-  localStorage.setItem("steps", JSON.stringify(stepsData));
+
+  let stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
+  const existingIndex = stepsList.findIndex(entry => entry.date === dateSaved);
+
+  if (existingIndex !== -1) {
+    stepsList[existingIndex].value = steps;
+  } else {
+    stepsList.push({ value: steps, date: dateSaved });
+  }
+
+  localStorage.setItem("stepsList", JSON.stringify(stepsList));
+
   alert(`Steps saved successfully on ${dateSaved}!`);
+  drawChart(); 
 });
+
+
 
 
 
