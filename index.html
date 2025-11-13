@@ -27,8 +27,13 @@
     </script>
     <h2>Dashboard</h2>
     <h3>Daily Steps Chart</h3>
-    <canvas id="stepsChart" width="200" height="100"></canvas>
-
+    <select id="stepSizeSelect">
+        <option value="500">500</option>
+        <option value="1000" selected>1000</option>
+        <option value="10000">10000</option>
+    </select>
+    <canvas id="stepsChart" width="225" height="125"></canvas>
+  
     <h3>Calories Burned Chart</h3>   
     <canvas id="caloriesChart" width="200" height="100"></canvas>
 

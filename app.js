@@ -1,12 +1,18 @@
 
-function drawStepsChart() {
+let stepsChart;
+
+function drawStepsChart(stepSize = 1000) {
   const ctx = document.getElementById('stepsChart').getContext('2d');
   const stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
 
   const dates = stepsList.map(entry => entry.date);
   const values = stepsList.map(entry => entry.value);
 
-  new Chart(ctx, {
+  if (stepsChart) {
+    stepsChart.destroy();
+  }
+
+  stepsChart = new Chart(ctx, {
     type: 'line', 
     data: {
       labels: dates,
@@ -23,13 +29,45 @@ function drawStepsChart() {
     options: {
       scales: {
         y: {
-          beginAtZero: true
+          beginAtZero: true,
+          ticks: {
+            stepSize: stepSize 
+          }
         }
       }
     }
   });
 }
-window.addEventListener('load', drawStepsChart);
+
+
+document.getElementById('stepSizeSelect').addEventListener('change', function() {
+  const newStepSize = parseInt(this.value);
+  drawStepsChart(newStepSize);
+});
+
+document.getElementById("saveBtn1").addEventListener("click", function () {
+  const steps = document.getElementById("steps").value;
+  const dateSaved = new Date().toLocaleDateString();
+
+  let stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
+  const existingIndex = stepsList.findIndex(entry => entry.date === dateSaved);
+
+  if (existingIndex !== -1) {
+    stepsList[existingIndex].value = steps;
+  } else {
+    stepsList.push({ value: steps, date: dateSaved });
+  }
+
+  localStorage.setItem("stepsList", JSON.stringify(stepsList));
+
+  alert(`Steps saved successfully on ${dateSaved}!`);
+  const selectedStep = parseInt(document.getElementById('stepSizeSelect').value);
+  drawStepsChart(selectedStep); 
+});
+
+
+window.addEventListener('load', drawStepsChart(1000));
+
 function drawCaloriesChart() {
   const ctx = document.getElementById('caloriesChart').getContext('2d');
   const caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
@@ -60,6 +98,25 @@ function drawCaloriesChart() {
     }
   });
 }
+
+document.getElementById("saveBtn2").addEventListener("click", function () {
+  const calories = document.getElementById("calories").value;
+  const dateSaved = new Date().toLocaleDateString();
+
+  let caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
+  const existingIndex = caloriesList.findIndex(entry => entry.date === dateSaved);
+
+  if (existingIndex !== -1) {
+    caloriesList[existingIndex].value = calories;
+  } else {
+    caloriesList.push({ value: calories, date: dateSaved });
+  }
+
+  localStorage.setItem("caloriesList", JSON.stringify(caloriesList));
+
+  alert(`Calories saved successfully on ${dateSaved}!`);
+  drawCaloriesChart(); 
+});
 
 window.addEventListener('load', drawCaloriesChart);
 
@@ -93,51 +150,6 @@ function drawWaterChart() {
     }
   });
 }
-window.addEventListener('load', drawWaterChart);
-
-
-
-document.getElementById("saveBtn1").addEventListener("click", function () {
-  const steps = document.getElementById("steps").value;
-  const dateSaved = new Date().toLocaleDateString();
-
-  let stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
-  const existingIndex = stepsList.findIndex(entry => entry.date === dateSaved);
-
-  if (existingIndex !== -1) {
-    stepsList[existingIndex].value = steps;
-  } else {
-    stepsList.push({ value: steps, date: dateSaved });
-  }
-
-  localStorage.setItem("stepsList", JSON.stringify(stepsList));
-
-  alert(`Steps saved successfully on ${dateSaved}!`);
-  drawStepsChart(); 
-});
-
-
-
-
-
-document.getElementById("saveBtn2").addEventListener("click", function () {
-  const calories = document.getElementById("calories").value;
-  const dateSaved = new Date().toLocaleDateString();
-
-  let caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
-  const existingIndex = caloriesList.findIndex(entry => entry.date === dateSaved);
-
-  if (existingIndex !== -1) {
-    caloriesList[existingIndex].value = calories;
-  } else {
-    caloriesList.push({ value: calories, date: dateSaved });
-  }
-
-  localStorage.setItem("caloriesList", JSON.stringify(caloriesList));
-
-  alert(`Calories saved successfully on ${dateSaved}!`);
-  drawCaloriesChart(); 
-});
 
 document.getElementById("saveBtn3").addEventListener("click", function () {
   const water = document.getElementById("water").value;
@@ -157,6 +169,19 @@ document.getElementById("saveBtn3").addEventListener("click", function () {
   alert(`Water intake saved successfully on ${dateSaved}!`);
   drawWaterChart();
 });
+
+window.addEventListener('load', drawWaterChart);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
