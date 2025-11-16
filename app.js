@@ -31,7 +31,7 @@ function drawStepsChart(stepSize = 1000) {
         y: {
           beginAtZero: true,
           ticks: {
-            stepSize: stepSize 
+            stepSize: stepSize
           }
         }
       }
