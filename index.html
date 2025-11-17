@@ -32,6 +32,12 @@
         <option value="1000" selected>1000</option>
         <option value="10000">10000</option>
     </select>
+
+    <select id="timeRangeSelect">
+        <option value="day" selected>Daily</option>
+        <option value="month">Monthly</option>
+        <option value="year">Yearly</option>
+    </select>
     <canvas id="stepsChart" width="225" height="125"></canvas>
   
     <h3>Calories Burned Chart</h3>   
@@ -39,6 +45,11 @@
 
     <h3>Water Intake Chart</h3>   
     <canvas id="waterChart" width="200" height="100"></canvas>
+
+    <h3>Recent Activities</h3> 
+
+    <div id="activitiesList"></div>
+
     <script src="app.js"></script>
 </body>
 
