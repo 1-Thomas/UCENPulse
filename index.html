@@ -1,58 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    
-
-    <section id="Health Metrics Tracker">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
 
 
-    </section>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+
+    <link rel="stylesheet" href="style.css">
+
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-   
 </head>
 
 <body>
+ 
     <div id="navbar"></div>
     <script>
         fetch('navbar.html')
             .then(response => response.text())
-            .then(data => {
-                document.getElementById('navbar').innerHTML = data;
-            });
+            .then(data => document.getElementById('navbar').innerHTML = data);
     </script>
-    <h2>Dashboard</h2>
-    <h3>Daily Steps Chart</h3>
-    <select id="stepSizeSelect">
-        <option value="500">500</option>
-        <option value="1000" selected>1000</option>
-        <option value="10000">10000</option>
-    </select>
 
-    <select id="timeRangeSelect">
-        <option value="day" selected>Daily</option>
-        <option value="month">Monthly</option>
-        <option value="year">Yearly</option>
-    </select>
-    <canvas id="stepsChart" width="225" height="125"></canvas>
-  
-    <h3>Calories Burned Chart</h3>   
-    <canvas id="caloriesChart" width="200" height="100"></canvas>
+    <div class="page-wrapper">
+        <h2>Dashboard</h2>
 
-    <h3>Water Intake Chart</h3>   
-    <canvas id="waterChart" width="200" height="100"></canvas>
+       
+        <div class="chart-grid">
 
-    <h3>Recent Activities</h3> 
+            <div class="chart-box">
+                <h3>Daily Steps Chart</h3>
+                <select id="stepSizeSelect">
+                    <option value="500">500</option>
+                    <option value="1000" selected>1000</option>
+                    <option value="10000">10000</option>
+                </select>
+                <select id="dateFilterSelect">
+                    <option value="daily" selected>Daily</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+                <canvas id="stepsChart"></canvas>
+            </div>
 
-    <div id="activitiesList"></div>
+            <div class="chart-box">
+                <h3>Calories Burned Chart</h3>
+                <select id="calorieStepSizeSelect">
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                    <option value="10000">10000</option>
+                </select>
+                <select id="calorieDateFilterSelect">
+                    <option value="daily">Daily</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+                <canvas id="caloriesChart"></canvas>
+            </div>
 
-    <script src="app.js"></script>
+            <div class="chart-box">
+                <h3>Water Intake Chart</h3>
+                <select id="waterStepSizeSelect">
+                    <option value="250">250</option>
+                    <option value="500" selected>500</option>
+                    <option value="1000">1000</option>
+                </select>
+                <select id="waterDateFilterSelect">
+                    <option value="daily" selected>Daily</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+                <canvas id="waterChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <h3>Sleep Chart</h3>
+                <select id="sleepStepSizeSelect">
+                    <option value="1" selected>1 hr</option>
+                    <option value="4">4 hrs</option>
+                    <option value="6">6 hrs</option>
+                    <option value="8">8 hrs</option>
+                </select>
+                <select id="sleepDateFilterSelect">
+                    <option value="daily" selected>Daily</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+                <canvas id="sleepChart"></canvas>
+            </div>
+
+        </div>
+
+    
+        <section class="activities-section">
+            <h2 class="section-title">Recent Activities</h2>
+            <div id="activitiesList" class="activities-container"></div>
+        </section>
+
+    </div>
+
+   
+    <script type="module"  src="app.js"></script>
+
 </body>
-
-
-
 </html>

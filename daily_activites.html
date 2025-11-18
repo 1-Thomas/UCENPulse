@@ -3,62 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Log Activity</title>
+
+ 
+    <link rel="stylesheet" href="style.css">
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
+   
     <div id="navbar"></div>
-    <section id="daily_activities">
-        <h2>Activity</h2>
-        <form id="activityForm">
-            <label for="activityType">Please choose the activity type:</label>
-            <select id="activityType" name="Activties" required>
-                <option value="running">Running</option>
-                <option value="cycling">Cycling</option>
-                <option value="gym">Gym Session</option>
-                <option value="swimming">Swimming</option>
-            </select>
-            <br><br>
-
-            <label for="duration">Select duration:</label>
-            <select id="duration" name="duration" required>
-                <option value="" disabled selected>Select duration</option>
-                <option value="15">15 minutes</option>
-                <option value="30">30 minutes</option>
-                <option value="45">45 minutes</option>
-                <option value="60">1 hour</option>
-                <option value="90">1 hour 30 minutes</option>
-                <option value="120">2 hours</option>
-                <option value="150">2 hours 30 minutes</option>
-                <option value="180">3 hours</option>
-            </select>
-            <br><br>
-
-
-            <textarea id="notes" name="notes" rows="4" cols="50" placeholder="Add any notes..."></textarea>
-
-            <br><br>
-            <button type="submit">Submit</button>
-        </form>
-    </section>
-
     <script>
         fetch('navbar.html')
             .then(response => response.text())
-            .then(data => {
-                document.getElementById('navbar').innerHTML = data;
-            });
+            .then(data => document.getElementById('navbar').innerHTML = data);
     </script>
-     <script>
-        fetch('navbar.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('navbar').innerHTML = data;
 
-                const script = document.createElement("script");
-                script.src = "app.js";
-                document.body.appendChild(script);
+    <div class="page-wrapper">
+        <section class="activity-form-section">
+            <h2 class="section-title"><i class="fa-solid fa-person-running"></i> Log Your Activity</h2>
+
+            <form id="activityForm" class="form-card">
+
+                <div class="form-group">
+                    <label for="activityType">Activity Type</label>
+                    <select id="activityType" required>
+                        <option value="Running">Running</option>
+                        <option value="Cycling">Cycling</option>
+                        <option value="Gym">Gym Session</option>
+                        <option value="Swimming">Swimming</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="duration">Duration</label>
+                    <select id="duration" required>
+                        <option value="" disabled selected>Select duration</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="45">45 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="90">1.5 hours</option>
+                        <option value="120">2 hours</option>
+                        <option value="150">2.5 hours</option>
+                        <option value="180">3 hours</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" rows="4" placeholder="Add any notes... (optional)"></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-check"></i> Save Activity
+                </button>
+
+            </form>
+        </section>
+
+           <section class="activities-section">
+                <div class="activities-header">
+                    <h2 class="section-title">Recent Activities</h2>
+                    <a href="all_activities.html" class="see-more-link">See more &raquo;</a>
+                </div>
+
+                <div id="activitiesList" class="activities-container"></div>
+            </section>
+
+
+
+     <script>
+        function getActivityIcon(type) {
+            const cleanType = type.trim().toLowerCase();
+
+            const iconMap = {
+                "workout": "fa-dumbbell",
+                "running": "fa-person-running",
+                "cycling": "fa-bicycle",
+                "swimming": "fa-person-swimming",
+                "walking": "fa-person-walking",
+                "yoga": "fa-spa",
+                "gym": "fa-heart-pulse",
+            };
+
+            return iconMap[cleanType] || "fa-clipboard-list";
+        }
+
+       function displayRecentActivities() {
+            const activities = JSON.parse(localStorage.getItem("activities")) || [];
+            const container = document.getElementById("activitiesList");
+            container.innerHTML = "";
+
+            if (activities.length === 0) {
+                container.innerHTML = `<p class="no-activity-message">No activities recorded yet.</p>`;
+                return;
+            }
+
+            
+            const recentActivities = activities.slice(-5).reverse();
+
+            recentActivities.forEach(activity => {
+                const icon = getActivityIcon(activity.activityType);
+
+                container.innerHTML += `
+                <div class="activity-card">
+                    <header class="card-header">
+                        <div class="activity-header-left">
+                            <i class="fa-solid ${icon} activity-icon"></i>
+                            <span class="activity-title">${activity.activityType}</span>
+                        </div>
+                        <span class="activity-date">${activity.time}</span>
+                    </header>
+
+                    <p><strong>Duration:</strong> ${activity.duration}</p>
+                    <p><strong>Notes:</strong> ${activity.notes || "None"}</p>
+                </div>`;
             });
+        }
+
+        displayRecentActivities();
+
+
+        const activityForm = document.getElementById("activityForm");
+
+        if (activityForm) {
+            activityForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+
+                const activityType = document.getElementById("activityType").value;
+                const duration = document.getElementById("duration").value;
+                const notes = document.getElementById("notes").value;
+                const dateSaved = new Date().toLocaleString();
+
+                const activities = JSON.parse(localStorage.getItem("activities")) || [];
+
+                const newActivity = {
+                    activityType,
+                    duration,
+                    notes,
+                    time: dateSaved
+                };
+
+                activities.push(newActivity);
+                localStorage.setItem("activities", JSON.stringify(activities));
+
+                alert("Activity saved successfully!");
+                activityForm.reset();
+                displayAllActivities();
+            });
+        }
     </script>
+
+
+   
+    <script src="app.js"></script>
+
 </body>
 </html>

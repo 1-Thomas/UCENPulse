@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Activities</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f9fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+            color: #333;
+        }
+
+        .back-link {
+            font-size: 0.95rem;
+            color: #0078ff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+            color: #005fcc;
+        }
+
+        /* Activity List */
+        .activities-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .activity-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 14px;
+            border-radius: 10px;
+            box-shadow: 0px 1px 5px rgba(0,0,0,0.06);
+            transition: background 0.2s;
+        }
+
+        .activity-card:hover {
+            background: #f1f4f9;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .activity-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .activity-icon {
+            font-size: 1.4rem;
+            color: #0078ff;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .activity-date {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .no-activity-message {
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+    <div class="page-header">
+        <h2 class="section-title"><i class="fa-solid fa-list-check"></i> All Activities</h2>
+        <a href="daily_activites.html" class="back-link">&laquo; Back</a>
+    </div>
+
+    <div id="allActivitiesList" class="activities-list"></div>
+
+</div>
+
+<script>
+    function getActivityIcon(type) {
+        const cleanType = type.trim().toLowerCase();
+
+        const iconMap = {
+            "workout": "fa-dumbbell",
+            "running": "fa-person-running",
+            "cycling": "fa-bicycle",
+            "swimming": "fa-person-swimming",
+            "walking": "fa-person-walking",
+            "yoga": "fa-spa",
+            "gym": "fa-heart-pulse",
+        };
+
+        return iconMap[cleanType] || "fa-clipboard-list";
+    }
+
+    function loadAllActivities() {
+        const activities = JSON.parse(localStorage.getItem("activities")) || [];
+        const container = document.getElementById("allActivitiesList");
+        container.innerHTML = "";
+
+        if (activities.length === 0) {
+            container.innerHTML = `<p class="no-activity-message">No activities recorded yet.</p>`;
+            return;
+        }
+
+        activities.forEach(activity => {
+            const icon = getActivityIcon(activity.activityType);
+
+            container.innerHTML += `
+            <div class="activity-card">
+                <header class="card-header">
+                    <div class="activity-header-left">
+                        <i class="fa-solid ${icon} activity-icon"></i>
+                        <span class="activity-title">${activity.activityType}</span>
+                    </div>
+                    <span class="activity-date">${activity.time}</span>
+                </header>
+
+                <p><strong>Duration:</strong> ${activity.duration} minutes</p>
+                <p><strong>Notes:</strong> ${activity.notes || "None"}</p>
+            </div>`;
+        });
+    }
+
+    loadAllActivities();
+</script>
+
+</body>
+</html>

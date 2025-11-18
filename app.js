@@ -1,25 +1,63 @@
+import {
+  stepsChart,
+  setStepsChart,
+  caloriesChart,
+  setCaloriesChart,
+  waterChart,
+  setWaterChart,
+  sleepChart,
+  setSleepChart
+} from './state.js';
 
-let stepsChart;
 
-function drawStepsChart(stepSize = 1000) {
-  const ctx = document.getElementById('stepsChart').getContext('2d');
-  const stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
-
-  const dates = stepsList.map(entry => entry.date);
-  const values = stepsList.map(entry => entry.value);
-
-
-  if (stepsChart) {
-    stepsChart.destroy();
+function onDomReady(fn) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fn);
+  } else {
+    fn();
   }
+}
 
-  stepsChart = new Chart(ctx, {
-    type: 'line', 
+/* Steps Chart */
+
+function groupStepsDates(filterType, stepsList) {
+  const grouped = {};
+
+  stepsList.forEach(entry => {
+    const date = new Date(entry.date);
+    let key;
+
+    if (filterType === 'monthly') {
+      key = `${date.toLocaleString('en-GB', { month: 'short' })} ${date.getFullYear()}`;
+    } else if (filterType === 'yearly') {
+      key = date.getFullYear();
+    } else {
+      key = date.toLocaleDateString('en-GB');
+    }
+
+    grouped[key] = (grouped[key] || 0) + Number(entry.value);
+  });
+
+  return { labels: Object.keys(grouped), values: Object.values(grouped) };
+}
+
+function drawStepsChart(stepSize = 1000, filterType = 'daily') {
+  const canvas = document.getElementById('stepsChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
+  const groupedData = groupStepsDates(filterType, stepsList);
+
+  if (stepsChart) stepsChart.destroy();
+
+  const chart = new Chart(ctx, {
+    type: 'line',
     data: {
-      labels: dates,
+      labels: groupedData.labels,
       datasets: [{
-        label: 'Daily Steps',
-        data: values,
+        label: 'Steps',
+        data: groupedData.values,
         borderWidth: 2.5,
         borderColor: 'green',
         backgroundColor: 'lightgreen',
@@ -31,41 +69,55 @@ function drawStepsChart(stepSize = 1000) {
       scales: {
         y: {
           beginAtZero: true,
-          ticks: {
-            stepSize: stepSize
-          }
+          ticks: { stepSize }
         }
       }
     }
   });
+
+  setStepsChart(chart);
 }
 
+/* Calories Chart */
 
-const stepSelect = document.getElementById('stepSizeSelect');
-if (stepSelect) {
-  stepSelect.addEventListener('change', function() {
-    const newStepSize = parseInt(this.value);
-    drawStepsChart(newStepSize);
+function groupCaloriesDates(filterType, caloriesList) {
+  const grouped = {};
+
+  caloriesList.forEach(entry => {
+    const date = new Date(entry.date);
+    let key;
+
+    if (filterType === 'monthly') {
+      key = `${date.toLocaleString('en-GB', { month: 'short' })} ${date.getFullYear()}`;
+    } else if (filterType === 'yearly') {
+      key = date.getFullYear();
+    } else {
+      key = date.toLocaleDateString('en-GB');
+    }
+
+    grouped[key] = (grouped[key] || 0) + Number(entry.value);
   });
+
+  return { labels: Object.keys(grouped), values: Object.values(grouped) };
 }
 
+function drawCaloriesChart(stepSize = 100, filterType = 'daily') {
+  const canvas = document.getElementById('caloriesChart');
+  if (!canvas) return;
 
-window.addEventListener('load', () => drawStepsChart(1000));
-
-function drawCaloriesChart() {
-  const ctx = document.getElementById('caloriesChart').getContext('2d');
+  const ctx = canvas.getContext('2d');
   const caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
+  const groupedData = groupCaloriesDates(filterType, caloriesList);
 
-  const dates = caloriesList.map(entry => entry.date);
-  const values = caloriesList.map(entry => entry.value);
+  if (caloriesChart) caloriesChart.destroy();
 
-  new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: dates,
+      labels: groupedData.labels,
       datasets: [{
-        label: 'Daily Calories',
-        data: values,
+        label: 'Calories',
+        data: groupedData.values,
         borderWidth: 2.5,
         borderColor: 'red',
         backgroundColor: 'pink',
@@ -76,29 +128,56 @@ function drawCaloriesChart() {
     options: {
       scales: {
         y: {
-          beginAtZero: true
+          beginAtZero: true,
+          ticks: { stepSize }
         }
       }
     }
   });
+
+  setCaloriesChart(chart);
 }
 
-window.addEventListener('load', drawCaloriesChart);
+/* Water Chart */
 
-function drawWaterChart() {
-  const ctx = document.getElementById('waterChart').getContext('2d');
+function groupWaterDates(filterType, waterList) {
+  const grouped = {};
+
+  waterList.forEach(entry => {
+    const date = new Date(entry.date);
+    let key;
+
+    if (filterType === 'monthly') {
+      key = `${date.toLocaleString('en-GB', { month: 'short' })} ${date.getFullYear()}`;
+    } else if (filterType === 'yearly') {
+      key = date.getFullYear();
+    } else {
+      key = date.toLocaleDateString('en-GB');
+    }
+
+    grouped[key] = (grouped[key] || 0) + Number(entry.value);
+  });
+
+  return { labels: Object.keys(grouped), values: Object.values(grouped) };
+}
+
+function drawWaterChart(stepSize = 500, filterType = 'daily') {
+  const canvas = document.getElementById('waterChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
   const waterList = JSON.parse(localStorage.getItem("waterList")) || [];
+  const groupedData = groupWaterDates(filterType, waterList);
 
-  const dates = waterList.map(entry => entry.date);
-  const values = waterList.map(entry => entry.value);
+  if (waterChart) waterChart.destroy();
 
-  new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: dates,
+      labels: groupedData.labels,
       datasets: [{
-        label: 'Daily Water Intake',
-        data: values,
+        label: 'Water Intake (ml)',
+        data: groupedData.values,
         borderWidth: 2.5,
         borderColor: 'blue',
         backgroundColor: 'lightblue',
@@ -110,144 +189,296 @@ function drawWaterChart() {
       scales: {
         y: {
           beginAtZero: true,
+          ticks: { stepSize }
         }
       }
     }
   });
+
+  setWaterChart(chart);
 }
-window.addEventListener('load', drawWaterChart);
 
+/* Sleep Chart */
 
-const saveBtn1 = document.getElementById("saveBtn1");
-if (saveBtn1) {
-  saveBtn1.addEventListener("click", function () {
-    const steps = document.getElementById("steps").value;
-    const dateSaved = new Date().toLocaleDateString();
+function groupSleepDates(filterType, sleepList) {
+  const grouped = {};
 
-    let stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
-    const existingIndex = stepsList.findIndex(entry => entry.date === dateSaved);
+  sleepList.forEach(entry => {
+    const date = new Date(entry.date);
+    let key;
 
-    if (existingIndex !== -1) {
-      stepsList[existingIndex].value = steps;
+    if (filterType === 'monthly') {
+      key = `${date.toLocaleString('en-GB', { month: 'short' })} ${date.getFullYear()}`;
+    } else if (filterType === 'yearly') {
+      key = date.getFullYear();
     } else {
-      stepsList.push({ value: steps, date: dateSaved });
+      key = date.toLocaleDateString('en-GB');
     }
 
-    localStorage.setItem("stepsList", JSON.stringify(stepsList));
-    alert(`Steps saved successfully on ${dateSaved}!`);
-
-    const selectedStep = parseInt(document.getElementById('stepSizeSelect').value);
-    drawStepsChart(selectedStep);
+    grouped[key] = (grouped[key] || 0) + Number(entry.value);
   });
+
+  return { labels: Object.keys(grouped), values: Object.values(grouped) };
 }
 
+function drawSleepChart(stepSize = 1, filterType = 'daily') {
+  const canvas = document.getElementById('sleepChart');
+  if (!canvas) return;
 
+  const ctx = canvas.getContext('2d');
+  const sleepList = JSON.parse(localStorage.getItem("sleepList")) || [];
+  const groupedData = groupSleepDates(filterType, sleepList);
 
-const saveBtn2 = document.getElementById("saveBtn2");
-if (saveBtn2) {
-  saveBtn2.addEventListener("click", function () {
-    const calories = document.getElementById("calories").value;
-    const dateSaved = new Date().toLocaleDateString();
+  if (sleepChart) sleepChart.destroy();
 
-    let caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
-    const existingIndex = caloriesList.findIndex(entry => entry.date === dateSaved);
-
-    if (existingIndex !== -1) {
-      caloriesList[existingIndex].value = calories;
-    } else {
-      caloriesList.push({ value: calories, date: dateSaved });
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: groupedData.labels,
+      datasets: [{
+        label: 'Sleep Hours',
+        data: groupedData.values,
+        borderWidth: 2.5,
+        borderColor: 'purple',
+        backgroundColor: 'rgba(180, 100, 255, 0.3)',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize }
+        }
+      }
     }
-
-    localStorage.setItem("caloriesList", JSON.stringify(caloriesList));
-    alert(`Calories saved successfully on ${dateSaved}!`);
-    drawCaloriesChart();
   });
+
+  setSleepChart(chart);
 }
 
+/* Dashboard Activities */
 
-
-const saveBtn3 = document.getElementById("saveBtn3");
-if (saveBtn3) {
-  saveBtn3.addEventListener("click", function () {
-    const water = document.getElementById("water").value;
-    const dateSaved = new Date().toLocaleDateString();
-
-    let waterList = JSON.parse(localStorage.getItem("waterList")) || [];
-    const existingIndex = waterList.findIndex(entry => entry.date === dateSaved);
-
-    if (existingIndex !== -1) {
-      waterList[existingIndex].value = water;
-    } else {
-      waterList.push({ value: water, date: dateSaved });
-    }
-
-    localStorage.setItem("waterList", JSON.stringify(waterList));
-    alert(`Water intake saved successfully on ${dateSaved}!`);
-    drawWaterChart();
-  });
+function getActivityIcon(type) {
+  const clean = type.trim().toLowerCase();
+  return {
+    "workout": "fa-dumbbell",
+    "running": "fa-person-running",
+    "cycling": "fa-bicycle",
+    "swimming": "fa-person-swimming",
+    "walking": "fa-person-walking",
+    "yoga": "fa-spa",
+    "gym": "fa-heart-pulse",
+  }[clean] || "fa-clipboard-list";
 }
-
 
 function displayActivities() {
   const activities = JSON.parse(localStorage.getItem("activities")) || [];
   const container = document.getElementById("activitiesList");
+  if (!container) return;
+
   container.innerHTML = "";
 
   const today = new Date();
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(today.getDate() - 7);
+  const weekAgo = new Date(today);
+  weekAgo.setDate(today.getDate() - 7);
 
-  
-  const recentActivities = activities.filter(activity => {
-    const activityDate = new Date(activity.time);
-    return activityDate >= sevenDaysAgo && activityDate <= today;
-  });
+  const recent = activities.filter(a => new Date(a.time) >= weekAgo);
 
-  if (recentActivities.length === 0) {
-    container.innerHTML = "<p>No activities in the last 7 days.</p>";
+  if (recent.length === 0) {
+    container.innerHTML = `<p class="no-activity-message">No activities recorded in the last 7 days.</p>`;
     return;
   }
 
-  recentActivities.forEach((activity, index) => {
+  recent.forEach(a => {
+    const icon = getActivityIcon(a.activityType);
     container.innerHTML += `
       <div class="activity-card">
-        <h3>Activity ${index + 1}</h3>
-        <p><strong>Type:</strong> ${activity.activityType}</p>
-        <p><strong>Duration:</strong> ${activity.duration}</p>
-        <p><strong>Notes:</strong> ${activity.notes}</p>
-        <p><strong>Saved:</strong> ${activity.time}</p>
-        <hr>
-      </div>`;
+        <header class="card-header">
+          <div class="activity-header-left">
+            <i class="fa-solid ${icon} activity-icon"></i>
+            <span class="activity-title">${a.activityType}</span>
+          </div>
+          <span class="activity-date">${a.time}</span>
+        </header>
+        <p><strong>Duration:</strong> ${a.duration}</p>
+        <p><strong>Notes:</strong> ${a.notes}</p>
+      </div>
+    `;
   });
 }
 
-displayActivities(); 
+
+function initDashboard() {
+  /* Steps Input */
+  document.getElementById('stepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('dateFilterSelect')?.value || 'daily';
+    drawStepsChart(parseInt(this.value), filter);
+  });
+
+  document.getElementById('dateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('stepSizeSelect')?.value || '1000');
+    drawStepsChart(stepSize, this.value);
+  });
+
+  document.getElementById("saveBtn1")?.addEventListener("click", function () {
+    const stepsInput = document.getElementById("steps");
+    if (!stepsInput) return;
+
+    const steps = stepsInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+    let stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
+
+    const index = stepsList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) stepsList[index].value = steps;
+    else stepsList.push({ value: steps, date: isoDate });
+
+    localStorage.setItem("stepsList", JSON.stringify(stepsList));
+    alert(`Steps saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('stepSizeSelect')?.value || '1000');
+    const filter = document.getElementById('dateFilterSelect')?.value || 'daily';
+    drawStepsChart(stepSize, filter);
+  });
+
+  drawStepsChart(1000);
 
 
+  /* Calories Input */
+  document.getElementById('calorieStepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('calorieDateFilterSelect')?.value || 'daily';
+    drawCaloriesChart(parseInt(this.value), filter);
+  });
+
+  document.getElementById('calorieDateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('calorieStepSizeSelect')?.value || '100');
+    drawCaloriesChart(stepSize, this.value);
+  });
+
+  document.getElementById("saveBtn2")?.addEventListener("click", function () {
+    const caloriesInput = document.getElementById("calories");
+    if (!caloriesInput) return;
+
+    const calories = caloriesInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+    let caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
+
+    const index = caloriesList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) caloriesList[index].value = calories;
+    else caloriesList.push({ value: calories, date: isoDate });
+
+    localStorage.setItem("caloriesList", JSON.stringify(caloriesList));
+    alert(`Calories saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('calorieStepSizeSelect')?.value || '100');
+    const filter = document.getElementById('calorieDateFilterSelect')?.value || 'daily';
+    drawCaloriesChart(stepSize, filter);
+  });
+
+  drawCaloriesChart(100);
 
 
+  /* Water Input */
+  document.getElementById('waterStepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('waterDateFilterSelect')?.value || 'daily';
+    drawWaterChart(parseInt(this.value), filter);
+  });
 
-const activityForm = document.getElementById("activityForm");
-if (activityForm) {
-  activityForm.addEventListener("submit", function(event) {
+  document.getElementById('waterDateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('waterStepSizeSelect')?.value || '500');
+    drawWaterChart(stepSize, this.value);
+  });
 
-    const activityType = document.getElementById("activityType").value;
-    const duration = document.getElementById("duration").value;
-    const notes = document.getElementById("notes").value;
-    const dateSaved = new Date().toLocaleDateString();
+  document.getElementById("saveBtn3")?.addEventListener("click", function () {
+    const waterInput = document.getElementById("water");
+    if (!waterInput) return;
 
-    let activities = JSON.parse(localStorage.getItem("activities")) || [];
+    const water = waterInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+
+    let waterList = JSON.parse(localStorage.getItem("waterList")) || [];
+
+    const index = waterList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) waterList[index].value = water;
+    else waterList.push({ value: water, date: isoDate });
+
+    localStorage.setItem("waterList", JSON.stringify(waterList));
+    alert(`Water intake saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('waterStepSizeSelect')?.value || '500');
+    const filter = document.getElementById('waterDateFilterSelect')?.value || 'daily';
+    drawWaterChart(stepSize, filter);
+  });
+
+  drawWaterChart(500);
+
+
+  /* Sleep Input */
+  document.getElementById('sleepStepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('sleepDateFilterSelect')?.value || 'daily';
+    drawSleepChart(parseInt(this.value), filter);
+  });
+
+  document.getElementById('sleepDateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('sleepStepSizeSelect')?.value || '1');
+    drawSleepChart(stepSize, this.value);
+  });
+
+  document.getElementById("saveBtn4")?.addEventListener("click", function () {
+    const sleepInput = document.getElementById("sleepHours");
+    if (!sleepInput) return;
+
+    const hours = sleepInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+
+    let sleepList = JSON.parse(localStorage.getItem("sleepList")) || [];
+
+    const index = sleepList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) sleepList[index].value = hours;
+    else sleepList.push({ value: hours, date: isoDate });
+
+    localStorage.setItem("sleepList", JSON.stringify(sleepList));
+    alert(`Sleep hours saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('sleepStepSizeSelect')?.value || '1');
+    const filter = document.getElementById('sleepDateFilterSelect')?.value || 'daily';
+    drawSleepChart(stepSize, filter);
+  });
+
+  drawSleepChart(1);
+
+
+  /* Activities Form */
+  document.getElementById("activityForm")?.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const typeInput = document.getElementById("activityType");
+    const durationInput = document.getElementById("duration");
+    const notesInput = document.getElementById("notes");
+
+    if (!typeInput || !durationInput || !notesInput) return;
 
     const newActivity = {
-      activityType,
-      duration,
-      notes,
-      time: dateSaved
+      activityType: typeInput.value,
+      duration: durationInput.value,
+      notes: notesInput.value,
+      time: new Date().toLocaleString()
     };
 
+    const activities = JSON.parse(localStorage.getItem("activities")) || [];
     activities.push(newActivity);
-
     localStorage.setItem("activities", JSON.stringify(activities));
+
     alert("Activity saved successfully!");
+    this.reset();
+    displayActivities();
   });
+
+
+  displayActivities();
 }
+
+
+
+onDomReady(initDashboard);
