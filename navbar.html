@@ -3,37 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <h1>UCENPulse</h1>
- <style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
         }
 
+        
         .navbar {
             display: flex;
-            background-color: #333;
-            padding: 10px;
+            align-items: center;
+            justify-content: space-between;
+            background: #0078ff;
+            padding: 12px 24px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+      
+        .navbar-links {
+            display: flex;
+            gap: 16px;
         }
 
         .navbar a {
             color: white;
             text-decoration: none;
-            padding: 14px 20px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: background 0.25s ease;
         }
 
-        .navbar a:hover {
-            background-color: #575757;
+        .navbar a:hover,
+        .navbar a.active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        @media (max-width: 600px) {
+            .navbar {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="navbar">
-        <a href="index.html">Home</a>
-        <a href="daily_activites.html">Daily Activties</a>
-        <a href="health_metrics.html">Health Metrics</a>
-    </div>
-    
+    <nav class="navbar">
+        <div class="navbar-title">
+            <i class="fa-solid fa-heart-pulse"></i> UCENPulse
+        </div>
+
+        <div class="navbar-links">
+            <a href="index.html" id="nav-home">Dashboard</a>
+            <a href="daily_activites.html" id="nav-daily">Daily Activities</a>
+            <a href="health_metrics.html" id="nav-health">Health Metrics</a>
+        </div>
+    </nav>
+
+    <script>
+
+        const current = location.pathname.split("/").pop();
+        document.querySelectorAll(".navbar a").forEach(link => {
+            if (link.getAttribute("href") === current) {
+                link.classList.add("active");
+            }
+        });
+    </script>
 </body>
 </html>

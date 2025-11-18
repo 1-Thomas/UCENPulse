@@ -1,0 +1,296 @@
+/* Dashboard */
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0 !important;
+    padding: 0;
+}
+
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: 100%;
+    margin-top: 20px;
+    padding: 10px;
+    
+}
+
+.chart-box {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #ffffff;
+    text-align: center;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+}
+
+.chart-box canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 200px;
+}
+
+@media (max-width: 900px) {
+    .chart-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 600px) {
+    .chart-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .chart-box {
+        padding: 12px;
+    }
+}
+
+
+
+.page-wrapper {
+    border: 15px solid transparent;
+    padding: 10px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-wrapper h2 {
+    margin-top: 3px; 
+}
+
+
+.activities-section {
+    padding: 1rem;
+    margin-top: 25px; 
+}
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #333;
+  
+}
+
+.activities-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+.activity-card {
+    padding: 14px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    transition: 0.3s ease;
+    box-shadow: 0px 1px 5px rgba(0,0,0,0.05);
+}
+
+.activity-card:hover {
+    background: #f1f4f9;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+
+.activity-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.activity-icon {
+    font-size: 1.4rem;
+    color: #0078ff;
+}
+
+.activity-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.activity-date {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+
+.no-activity-message {
+    padding: 10px;
+    font-style: italic;
+    color: #777;
+    text-align: center;
+}
+
+
+/* Daily Activites */
+
+
+.activity-form-section {
+    max-width: 600px;
+    margin: 10px auto;
+    margin-top: 0; 
+}
+
+.form-card {
+    background: #ffffff;
+    padding: 1.3rem;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 0; 
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+    margin-top: 0; 
+}
+
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    transition: border 0.2s ease;
+}
+
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #0078ff;
+    outline: none;
+}
+
+.btn-primary {
+    background: #0078ff;
+    color: #fff;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    transition: background 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+    background: #005fcc;
+}
+
+
+
+
+/* Health Metrics */
+
+
+.page-wrapper {
+    max-width: 1100px;
+    margin: 5px auto 0 auto; 
+}
+
+.section-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    text-align: center;
+    margin-top: 0; 
+}
+
+
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+
+.input-card {
+    background: #ffffff;
+    padding: 1.2rem;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.06);
+}
+
+.input-card h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0;
+}
+
+
+label {
+    font-weight: 600;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-top: 6px;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.input-with-unit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-with-unit span {
+    background: #f1f1f1;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+
+.btn-primary {
+    width: 100%;
+    background: #0078ff;
+    color: white;
+    padding: 12px 0;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #005fcc;
+}
+
+
+

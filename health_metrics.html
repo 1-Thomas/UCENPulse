@@ -4,55 +4,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Health Input</title>
+
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+
+
     <div id="navbar"></div>
-
-
-
-
-    <section id="steps_section">
-        <h2>Steps</h2>
-        <label for="steps">Please insert your daily step amount</label>
-        <br><br>
-        <input  id="steps" name="steps">
-        <button id="saveBtn1">Save Data</button>
-    </section>
-
-    <section id="calories_section">
-        <h2>Calaries Burned</h2>
-        <label for="steps">Please insert the amount of calaries you have burned today</label>
-        <br><br>
-        <input id="calories" name="steps">
-        <button id="saveBtn2">Save Data</button>
-    </section>
-
-    <section id="water_intake">
-        <h2>Water Intake</h2>
-        <label for="steps">Please insert the amount of water you have drank today</label>
-        <br><br>
-        <input id="water" name="water">
-        <span>ml</span>
-        <button id="saveBtn3">Save Data</button>
-    </section>
 
     <script>
         fetch('navbar.html')
             .then(response => response.text())
-            .then(data => {
-                document.getElementById('navbar').innerHTML = data;
-
-            
-                const script = document.createElement("script");
-                script.src = "app.js";
-                document.body.appendChild(script);
-            });
+            .then(data => document.getElementById('navbar').innerHTML = data);
     </script>
 
 
-  
-</body>
+    <div class="page-wrapper">
 
+        <h2 class="section-title">Daily Health Input</h2>
+
+        <div class="input-grid">
+
+           
+            <section class="input-card">
+                <h3><i class="fa-solid fa-shoe-prints"></i> Steps</h3>
+                <label for="steps">Enter your total step count today</label>
+                <input type="number" id="steps" placeholder="e.g., 7500">
+                <button id="saveBtn1" class="btn-primary">Save</button>
+            </section>
+
+         
+            <section class="input-card">
+                <h3><i class="fa-solid fa-fire"></i> Calories Burned</h3>
+                <label for="calories">Enter calories burned today</label>
+                <input type="number" id="calories" placeholder="e.g., 450">
+                <button id="saveBtn2" class="btn-primary">Save</button>
+            </section>
+
+          
+            <section class="input-card">
+                <h3><i class="fa-solid fa-glass-water-droplet"></i> Water Intake</h3>
+                <label for="water">Enter today’s water intake</label>
+                <div class="input-with-unit">
+                    <input type="number" id="water" placeholder="e.g., 1500">
+                    <span>ml</span>
+                </div>
+                <button id="saveBtn3" class="btn-primary">Save</button>
+            </section>
+
+          
+            <section class="input-card">
+                <h3><i class="fa-solid fa-moon"></i> Sleep</h3>
+                <label for="sleepHours">Enter hours slept last night</label>
+                <div class="input-with-unit">
+                    <input type="number" id="sleepHours" placeholder="e.g., 7.5">
+                    <span>hrs</span>
+                </div>
+                <button id="saveBtn4" class="btn-primary">Save</button>
+            </section>
+
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
 </html>
