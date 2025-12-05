@@ -63,7 +63,100 @@
 
             </form>
         </section>
-    </div>
+
+           <section class="activities-section">
+                <div class="activities-header">
+                    <h2 class="section-title">Recent Activities</h2>
+                    <a href="all_activities.html" class="see-more-link">See more &raquo;</a>
+                </div>
+
+                <div id="activitiesList" class="activities-container"></div>
+            </section>
+
+
+
+     <script>
+        function getActivityIcon(type) {
+            const cleanType = type.trim().toLowerCase();
+
+            const iconMap = {
+                "workout": "fa-dumbbell",
+                "running": "fa-person-running",
+                "cycling": "fa-bicycle",
+                "swimming": "fa-person-swimming",
+                "walking": "fa-person-walking",
+                "yoga": "fa-spa",
+                "gym": "fa-heart-pulse",
+            };
+
+            return iconMap[cleanType] || "fa-clipboard-list";
+        }
+
+       function displayRecentActivities() {
+            const activities = JSON.parse(localStorage.getItem("activities")) || [];
+            const container = document.getElementById("activitiesList");
+            container.innerHTML = "";
+
+            if (activities.length === 0) {
+                container.innerHTML = `<p class="no-activity-message">No activities recorded yet.</p>`;
+                return;
+            }
+
+            
+            const recentActivities = activities.slice(-5).reverse();
+
+            recentActivities.forEach(activity => {
+                const icon = getActivityIcon(activity.activityType);
+
+                container.innerHTML += `
+                <div class="activity-card">
+                    <header class="card-header">
+                        <div class="activity-header-left">
+                            <i class="fa-solid ${icon} activity-icon"></i>
+                            <span class="activity-title">${activity.activityType}</span>
+                        </div>
+                        <span class="activity-date">${activity.time}</span>
+                    </header>
+
+                    <p><strong>Duration:</strong> ${activity.duration}</p>
+                    <p><strong>Notes:</strong> ${activity.notes || "None"}</p>
+                </div>`;
+            });
+        }
+
+        displayRecentActivities();
+
+
+        const activityForm = document.getElementById("activityForm");
+
+        if (activityForm) {
+            activityForm.addEventListener("submit", function(event) {
+                event.preventDefault();
+
+                const activityType = document.getElementById("activityType").value;
+                const duration = document.getElementById("duration").value;
+                const notes = document.getElementById("notes").value;
+                const dateSaved = new Date().toLocaleString();
+
+                const activities = JSON.parse(localStorage.getItem("activities")) || [];
+
+                const newActivity = {
+                    activityType,
+                    duration,
+                    notes,
+                    time: dateSaved
+                };
+
+                activities.push(newActivity);
+                localStorage.setItem("activities", JSON.stringify(activities));
+
+                alert("Activity saved successfully!");
+                activityForm.reset();
+                displayAllActivities();
+            });
+        }
+    </script>
+
 
    
     <script src="app.js"></script>

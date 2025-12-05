@@ -203,6 +203,104 @@ html, body {
     background: #005fcc;
 }
 
+/* Recent Activities Section */
+.activities-section {
+    padding: 1rem;
+    margin-top: 25px;
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.activities-container {
+    display: flex;
+    flex-direction: row;      
+    gap: 12px;
+    overflow-x: auto;         
+    padding-bottom: 10px;
+    scroll-behavior: smooth;
+}
+
+.activities-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.activities-container::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+
+.activity-card {
+    min-width: 260px;          
+    flex-shrink: 0;
+    padding: 14px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    transition: 0.3s ease;
+    box-shadow: 0px 1px 5px rgba(0,0,0,0.05);
+}
+
+.activity-card:hover {
+    background: #f1f4f9;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.activity-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.activity-icon {
+    font-size: 1.4rem;
+    color: #0078ff;
+}
+
+.activity-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.activity-date {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.activities-header .section-title {
+margin: 0; 
+}
+
+.activities-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    margin-bottom: 1rem;
+}
+
+.see-more-link {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0078ff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.see-more-link:hover {
+    color: #005fcc;
+    text-decoration: underline;
+}
+
 
 
 
