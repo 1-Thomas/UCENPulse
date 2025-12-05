@@ -9,7 +9,16 @@ import {
   setSleepChart
 } from './state.js';
 
-/* -------------------------- STEPS CHART -------------------------- */
+
+function onDomReady(fn) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fn);
+  } else {
+    fn();
+  }
+}
+
+/* Steps Chart */
 
 function groupStepsDates(filterType, stepsList) {
   const grouped = {};
@@ -33,7 +42,10 @@ function groupStepsDates(filterType, stepsList) {
 }
 
 function drawStepsChart(stepSize = 1000, filterType = 'daily') {
-  const ctx = document.getElementById('stepsChart').getContext('2d');
+  const canvas = document.getElementById('stepsChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
   const stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
   const groupedData = groupStepsDates(filterType, stepsList);
 
@@ -54,54 +66,34 @@ function drawStepsChart(stepSize = 1000, filterType = 'daily') {
       }]
     },
     options: {
-      scales: { y: { beginAtZero: true, ticks: { stepSize } } }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize }
+        }
+      }
     }
   });
 
   setStepsChart(chart);
 }
 
-document.getElementById('stepSizeSelect')?.addEventListener('change', function () {
-  drawStepsChart(parseInt(this.value), document.getElementById('dateFilterSelect').value);
-});
-
-document.getElementById('dateFilterSelect')?.addEventListener('change', function () {
-  drawStepsChart(parseInt(document.getElementById('stepSizeSelect').value), this.value);
-});
-
-document.getElementById("saveBtn1")?.addEventListener("click", function () {
-  const steps = document.getElementById("steps").value;
-  const isoDate = new Date().toISOString().split('T')[0];
-  let stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
-
-  const index = stepsList.findIndex(entry => entry.date === isoDate);
-  if (index !== -1) stepsList[index].value = steps;
-  else stepsList.push({ value: steps, date: isoDate });
-
-  localStorage.setItem("stepsList", JSON.stringify(stepsList));
-  alert(`Steps saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
-
-  drawStepsChart(parseInt(document.getElementById('stepSizeSelect').value),
-                 document.getElementById('dateFilterSelect').value);
-});
-
-window.addEventListener('load', () => drawStepsChart(1000));
-
-
-/* -------------------------- CALORIES CHART -------------------------- */
+/* Calories Chart */
 
 function groupCaloriesDates(filterType, caloriesList) {
   const grouped = {};
+
   caloriesList.forEach(entry => {
     const date = new Date(entry.date);
     let key;
 
-    if (filterType === 'monthly')
+    if (filterType === 'monthly') {
       key = `${date.toLocaleString('en-GB', { month: 'short' })} ${date.getFullYear()}`;
-    else if (filterType === 'yearly')
+    } else if (filterType === 'yearly') {
       key = date.getFullYear();
-    else
+    } else {
       key = date.toLocaleDateString('en-GB');
+    }
 
     grouped[key] = (grouped[key] || 0) + Number(entry.value);
   });
@@ -110,7 +102,10 @@ function groupCaloriesDates(filterType, caloriesList) {
 }
 
 function drawCaloriesChart(stepSize = 100, filterType = 'daily') {
-  const ctx = document.getElementById('caloriesChart').getContext('2d');
+  const canvas = document.getElementById('caloriesChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
   const caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
   const groupedData = groupCaloriesDates(filterType, caloriesList);
 
@@ -131,55 +126,34 @@ function drawCaloriesChart(stepSize = 100, filterType = 'daily') {
       }]
     },
     options: {
-      scales: { y: { beginAtZero: true, ticks: { stepSize } } }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize }
+        }
+      }
     }
   });
 
   setCaloriesChart(chart);
 }
 
-document.getElementById('calorieStepSizeSelect')?.addEventListener('change', function () {
-  drawCaloriesChart(parseInt(this.value), document.getElementById('calorieDateFilterSelect').value);
-});
-
-document.getElementById('calorieDateFilterSelect')?.addEventListener('change', function () {
-  drawCaloriesChart(parseInt(document.getElementById('calorieStepSizeSelect').value), this.value);
-});
-
-document.getElementById("saveBtn2")?.addEventListener("click", function () {
-  const calories = document.getElementById("calories").value;
-  const isoDate = new Date().toISOString().split('T')[0];
-  let caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
-
-  const index = caloriesList.findIndex(entry => entry.date === isoDate);
-  if (index !== -1) caloriesList[index].value = calories;
-  else caloriesList.push({ value: calories, date: isoDate });
-
-  localStorage.setItem("caloriesList", JSON.stringify(caloriesList));
-
-  alert(`Calories saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
-
-  drawCaloriesChart(parseInt(document.getElementById('calorieStepSizeSelect').value),
-                    document.getElementById('calorieDateFilterSelect').value);
-});
-
-window.addEventListener('load', () => drawCaloriesChart(100));
-
-
-/* -------------------------- WATER CHART -------------------------- */
+/* Water Chart */
 
 function groupWaterDates(filterType, waterList) {
   const grouped = {};
+
   waterList.forEach(entry => {
     const date = new Date(entry.date);
     let key;
 
-    if (filterType === 'monthly')
+    if (filterType === 'monthly') {
       key = `${date.toLocaleString('en-GB', { month: 'short' })} ${date.getFullYear()}`;
-    else if (filterType === 'yearly')
+    } else if (filterType === 'yearly') {
       key = date.getFullYear();
-    else
+    } else {
       key = date.toLocaleDateString('en-GB');
+    }
 
     grouped[key] = (grouped[key] || 0) + Number(entry.value);
   });
@@ -188,7 +162,10 @@ function groupWaterDates(filterType, waterList) {
 }
 
 function drawWaterChart(stepSize = 500, filterType = 'daily') {
-  const ctx = document.getElementById('waterChart').getContext('2d');
+  const canvas = document.getElementById('waterChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
   const waterList = JSON.parse(localStorage.getItem("waterList")) || [];
   const groupedData = groupWaterDates(filterType, waterList);
 
@@ -209,43 +186,19 @@ function drawWaterChart(stepSize = 500, filterType = 'daily') {
       }]
     },
     options: {
-      scales: { y: { beginAtZero: true, ticks: { stepSize } } }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize }
+        }
+      }
     }
   });
 
   setWaterChart(chart);
 }
 
-document.getElementById('waterStepSizeSelect')?.addEventListener('change', function () {
-  drawWaterChart(parseInt(this.value), document.getElementById('waterDateFilterSelect').value);
-});
-
-document.getElementById('waterDateFilterSelect')?.addEventListener('change', function () {
-  drawWaterChart(parseInt(document.getElementById('waterStepSizeSelect').value), this.value);
-});
-
-document.getElementById("saveBtn3")?.addEventListener("click", function () {
-  const water = document.getElementById("water").value;
-  const isoDate = new Date().toISOString().split('T')[0];
-
-  let waterList = JSON.parse(localStorage.getItem("waterList")) || [];
-
-  const index = waterList.findIndex(entry => entry.date === isoDate);
-  if (index !== -1) waterList[index].value = water;
-  else waterList.push({ value: water, date: isoDate });
-
-  localStorage.setItem("waterList", JSON.stringify(waterList));
-
-  alert(`Water intake saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
-
-  drawWaterChart(parseInt(document.getElementById('waterStepSizeSelect').value),
-                 document.getElementById('waterDateFilterSelect').value);
-});
-
-window.addEventListener('load', () => drawWaterChart(500));
-
-
-/* -------------------------- SLEEP CHART -------------------------- */
+/* Sleep Chart */
 
 function groupSleepDates(filterType, sleepList) {
   const grouped = {};
@@ -254,12 +207,13 @@ function groupSleepDates(filterType, sleepList) {
     const date = new Date(entry.date);
     let key;
 
-    if (filterType === 'monthly')
+    if (filterType === 'monthly') {
       key = `${date.toLocaleString('en-GB', { month: 'short' })} ${date.getFullYear()}`;
-    else if (filterType === 'yearly')
+    } else if (filterType === 'yearly') {
       key = date.getFullYear();
-    else
+    } else {
       key = date.toLocaleDateString('en-GB');
+    }
 
     grouped[key] = (grouped[key] || 0) + Number(entry.value);
   });
@@ -268,7 +222,10 @@ function groupSleepDates(filterType, sleepList) {
 }
 
 function drawSleepChart(stepSize = 1, filterType = 'daily') {
-  const ctx = document.getElementById('sleepChart').getContext('2d');
+  const canvas = document.getElementById('sleepChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
   const sleepList = JSON.parse(localStorage.getItem("sleepList")) || [];
   const groupedData = groupSleepDates(filterType, sleepList);
 
@@ -289,43 +246,20 @@ function drawSleepChart(stepSize = 1, filterType = 'daily') {
       }]
     },
     options: {
-      scales: { y: { beginAtZero: true, ticks: { stepSize } } }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize }
+        }
+      }
     }
   });
 
   setSleepChart(chart);
 }
 
-document.getElementById('sleepStepSizeSelect')?.addEventListener('change', function () {
-  drawSleepChart(parseInt(this.value), document.getElementById('sleepDateFilterSelect').value);
-});
+/* Dashboard Activities */
 
-document.getElementById('sleepDateFilterSelect')?.addEventListener('change', function () {
-  drawSleepChart(parseInt(document.getElementById('sleepStepSizeSelect').value), this.value);
-});
-
-document.getElementById("saveBtn4")?.addEventListener("click", function () {
-  const hours = document.getElementById("sleepHours").value;
-  const isoDate = new Date().toISOString().split('T')[0];
-
-  let sleepList = JSON.parse(localStorage.getItem("sleepList")) || [];
-
-  const index = sleepList.findIndex(entry => entry.date === isoDate);
-  if (index !== -1) sleepList[index].value = hours;
-  else sleepList.push({ value: hours, date: isoDate });
-
-  localStorage.setItem("sleepList", JSON.stringify(sleepList));
-
-  alert(`Sleep hours saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
-
-  drawSleepChart(parseInt(document.getElementById('sleepStepSizeSelect').value),
-                 document.getElementById('sleepDateFilterSelect').value);
-});
-
-window.addEventListener('load', () => drawSleepChart(1));
-
-
-/* -------------------------- ACTIVITIES -------------------------- */
 function getActivityIcon(type) {
   const clean = type.trim().toLowerCase();
   return {
@@ -342,6 +276,8 @@ function getActivityIcon(type) {
 function displayActivities() {
   const activities = JSON.parse(localStorage.getItem("activities")) || [];
   const container = document.getElementById("activitiesList");
+  if (!container) return;
+
   container.innerHTML = "";
 
   const today = new Date();
@@ -373,23 +309,176 @@ function displayActivities() {
   });
 }
 
-displayActivities();
 
-document.getElementById("activityForm")?.addEventListener("submit", function (event) {
-  event.preventDefault();
+function initDashboard() {
+  /* Steps Input */
+  document.getElementById('stepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('dateFilterSelect')?.value || 'daily';
+    drawStepsChart(parseInt(this.value), filter);
+  });
 
-  const newActivity = {
-    activityType: document.getElementById("activityType").value,
-    duration: document.getElementById("duration").value,
-    notes: document.getElementById("notes").value,
-    time: new Date().toLocaleString()
-  };
+  document.getElementById('dateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('stepSizeSelect')?.value || '1000');
+    drawStepsChart(stepSize, this.value);
+  });
 
-  const activities = JSON.parse(localStorage.getItem("activities")) || [];
-  activities.push(newActivity);
-  localStorage.setItem("activities", JSON.stringify(activities));
+  document.getElementById("saveBtn1")?.addEventListener("click", function () {
+    const stepsInput = document.getElementById("steps");
+    if (!stepsInput) return;
 
-  alert("Activity saved successfully!");
-  this.reset();
+    const steps = stepsInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+    let stepsList = JSON.parse(localStorage.getItem("stepsList")) || [];
+
+    const index = stepsList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) stepsList[index].value = steps;
+    else stepsList.push({ value: steps, date: isoDate });
+
+    localStorage.setItem("stepsList", JSON.stringify(stepsList));
+    alert(`Steps saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('stepSizeSelect')?.value || '1000');
+    const filter = document.getElementById('dateFilterSelect')?.value || 'daily';
+    drawStepsChart(stepSize, filter);
+  });
+
+  drawStepsChart(1000);
+
+
+  /* Calories Input */
+  document.getElementById('calorieStepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('calorieDateFilterSelect')?.value || 'daily';
+    drawCaloriesChart(parseInt(this.value), filter);
+  });
+
+  document.getElementById('calorieDateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('calorieStepSizeSelect')?.value || '100');
+    drawCaloriesChart(stepSize, this.value);
+  });
+
+  document.getElementById("saveBtn2")?.addEventListener("click", function () {
+    const caloriesInput = document.getElementById("calories");
+    if (!caloriesInput) return;
+
+    const calories = caloriesInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+    let caloriesList = JSON.parse(localStorage.getItem("caloriesList")) || [];
+
+    const index = caloriesList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) caloriesList[index].value = calories;
+    else caloriesList.push({ value: calories, date: isoDate });
+
+    localStorage.setItem("caloriesList", JSON.stringify(caloriesList));
+    alert(`Calories saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('calorieStepSizeSelect')?.value || '100');
+    const filter = document.getElementById('calorieDateFilterSelect')?.value || 'daily';
+    drawCaloriesChart(stepSize, filter);
+  });
+
+  drawCaloriesChart(100);
+
+
+  /* Water Input */
+  document.getElementById('waterStepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('waterDateFilterSelect')?.value || 'daily';
+    drawWaterChart(parseInt(this.value), filter);
+  });
+
+  document.getElementById('waterDateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('waterStepSizeSelect')?.value || '500');
+    drawWaterChart(stepSize, this.value);
+  });
+
+  document.getElementById("saveBtn3")?.addEventListener("click", function () {
+    const waterInput = document.getElementById("water");
+    if (!waterInput) return;
+
+    const water = waterInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+
+    let waterList = JSON.parse(localStorage.getItem("waterList")) || [];
+
+    const index = waterList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) waterList[index].value = water;
+    else waterList.push({ value: water, date: isoDate });
+
+    localStorage.setItem("waterList", JSON.stringify(waterList));
+    alert(`Water intake saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('waterStepSizeSelect')?.value || '500');
+    const filter = document.getElementById('waterDateFilterSelect')?.value || 'daily';
+    drawWaterChart(stepSize, filter);
+  });
+
+  drawWaterChart(500);
+
+
+  /* Sleep Input */
+  document.getElementById('sleepStepSizeSelect')?.addEventListener('change', function () {
+    const filter = document.getElementById('sleepDateFilterSelect')?.value || 'daily';
+    drawSleepChart(parseInt(this.value), filter);
+  });
+
+  document.getElementById('sleepDateFilterSelect')?.addEventListener('change', function () {
+    const stepSize = parseInt(document.getElementById('sleepStepSizeSelect')?.value || '1');
+    drawSleepChart(stepSize, this.value);
+  });
+
+  document.getElementById("saveBtn4")?.addEventListener("click", function () {
+    const sleepInput = document.getElementById("sleepHours");
+    if (!sleepInput) return;
+
+    const hours = sleepInput.value;
+    const isoDate = new Date().toISOString().split('T')[0];
+
+    let sleepList = JSON.parse(localStorage.getItem("sleepList")) || [];
+
+    const index = sleepList.findIndex(entry => entry.date === isoDate);
+    if (index !== -1) sleepList[index].value = hours;
+    else sleepList.push({ value: hours, date: isoDate });
+
+    localStorage.setItem("sleepList", JSON.stringify(sleepList));
+    alert(`Sleep hours saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
+
+    const stepSize = parseInt(document.getElementById('sleepStepSizeSelect')?.value || '1');
+    const filter = document.getElementById('sleepDateFilterSelect')?.value || 'daily';
+    drawSleepChart(stepSize, filter);
+  });
+
+  drawSleepChart(1);
+
+
+  /* Activities Form */
+  document.getElementById("activityForm")?.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const typeInput = document.getElementById("activityType");
+    const durationInput = document.getElementById("duration");
+    const notesInput = document.getElementById("notes");
+
+    if (!typeInput || !durationInput || !notesInput) return;
+
+    const newActivity = {
+      activityType: typeInput.value,
+      duration: durationInput.value,
+      notes: notesInput.value,
+      time: new Date().toLocaleString()
+    };
+
+    const activities = JSON.parse(localStorage.getItem("activities")) || [];
+    activities.push(newActivity);
+    localStorage.setItem("activities", JSON.stringify(activities));
+
+    alert("Activity saved successfully!");
+    this.reset();
+    displayActivities();
+  });
+
+
   displayActivities();
-});
+}
+
+
+
+onDomReady(initDashboard);
