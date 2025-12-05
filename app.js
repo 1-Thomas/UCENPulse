@@ -9,7 +9,6 @@ import {
   setSleepChart
 } from './state.js';
 
-/* -------------------------- STEPS CHART -------------------------- */
 
 function groupStepsDates(filterType, stepsList) {
   const grouped = {};
@@ -88,7 +87,6 @@ document.getElementById("saveBtn1")?.addEventListener("click", function () {
 window.addEventListener('load', () => drawStepsChart(1000));
 
 
-/* -------------------------- CALORIES CHART -------------------------- */
 
 function groupCaloriesDates(filterType, caloriesList) {
   const grouped = {};
@@ -165,8 +163,6 @@ document.getElementById("saveBtn2")?.addEventListener("click", function () {
 
 window.addEventListener('load', () => drawCaloriesChart(100));
 
-
-/* -------------------------- WATER CHART -------------------------- */
 
 function groupWaterDates(filterType, waterList) {
   const grouped = {};
@@ -245,7 +241,6 @@ document.getElementById("saveBtn3")?.addEventListener("click", function () {
 window.addEventListener('load', () => drawWaterChart(500));
 
 
-/* -------------------------- SLEEP CHART -------------------------- */
 
 function groupSleepDates(filterType, sleepList) {
   const grouped = {};
@@ -325,7 +320,6 @@ document.getElementById("saveBtn4")?.addEventListener("click", function () {
 window.addEventListener('load', () => drawSleepChart(1));
 
 
-/* -------------------------- ACTIVITIES -------------------------- */
 function getActivityIcon(type) {
   const clean = type.trim().toLowerCase();
   return {
