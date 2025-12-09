@@ -20,7 +20,7 @@ function onDomReady(fn) {
 
 /* Steps Chart */
 
-function groupStepsDates(filterType, stepsList) {
+export function groupStepsDates(filterType, stepsList) {
   const grouped = {};
 
   stepsList.forEach(entry => {
@@ -41,7 +41,7 @@ function groupStepsDates(filterType, stepsList) {
   return { labels: Object.keys(grouped), values: Object.values(grouped) };
 }
 
-function drawStepsChart(stepSize = 1000, filterType = 'daily') {
+export function drawStepsChart(stepSize = 1000, filterType = 'daily') {
   const canvas = document.getElementById('stepsChart');
   if (!canvas) return;
 
@@ -260,7 +260,7 @@ function drawSleepChart(stepSize = 1, filterType = 'daily') {
 
 /* Dashboard Activities */
 
-function getActivityIcon(type) {
+export function getActivityIcon(type) {
   const clean = type.trim().toLowerCase();
   return {
     "workout": "fa-dumbbell",
@@ -273,7 +273,7 @@ function getActivityIcon(type) {
   }[clean] || "fa-clipboard-list";
 }
 
-function displayActivities() {
+export function displayActivities() {
   const activities = JSON.parse(localStorage.getItem("activities")) || [];
   const container = document.getElementById("activitiesList");
   if (!container) return;
@@ -284,7 +284,9 @@ function displayActivities() {
   const weekAgo = new Date(today);
   weekAgo.setDate(today.getDate() - 7);
 
-  const recent = activities.filter(a => new Date(a.time) >= weekAgo);
+  const recent = activities
+    .filter(a => new Date(a.time) >= weekAgo)
+    .sort((a, b) => new Date(b.time) - new Date(a.time)); // <-- SORT BY MOST RECENT
 
   if (recent.length === 0) {
     container.innerHTML = `<p class="no-activity-message">No activities recorded in the last 7 days.</p>`;
@@ -300,7 +302,7 @@ function displayActivities() {
             <i class="fa-solid ${icon} activity-icon"></i>
             <span class="activity-title">${a.activityType}</span>
           </div>
-          <span class="activity-date">${a.time}</span>
+          <span class="activity-date">${new Date(a.time).toLocaleDateString('en-GB')}</span>
         </header>
         <p><strong>Duration:</strong> ${a.duration}</p>
         <p><strong>Notes:</strong> ${a.notes}</p>
@@ -310,7 +312,7 @@ function displayActivities() {
 }
 
 
-function initDashboard() {
+export function initDashboard() {
   /* Steps Input */
   document.getElementById('stepSizeSelect')?.addEventListener('change', function () {
     const filter = document.getElementById('dateFilterSelect')?.value || 'daily';
@@ -335,7 +337,6 @@ function initDashboard() {
     else stepsList.push({ value: steps, date: isoDate });
 
     localStorage.setItem("stepsList", JSON.stringify(stepsList));
-    alert(`Steps saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
 
     const stepSize = parseInt(document.getElementById('stepSizeSelect')?.value || '1000');
     const filter = document.getElementById('dateFilterSelect')?.value || 'daily';
@@ -369,7 +370,6 @@ function initDashboard() {
     else caloriesList.push({ value: calories, date: isoDate });
 
     localStorage.setItem("caloriesList", JSON.stringify(caloriesList));
-    alert(`Calories saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
 
     const stepSize = parseInt(document.getElementById('calorieStepSizeSelect')?.value || '100');
     const filter = document.getElementById('calorieDateFilterSelect')?.value || 'daily';
@@ -404,7 +404,6 @@ function initDashboard() {
     else waterList.push({ value: water, date: isoDate });
 
     localStorage.setItem("waterList", JSON.stringify(waterList));
-    alert(`Water intake saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
 
     const stepSize = parseInt(document.getElementById('waterStepSizeSelect')?.value || '500');
     const filter = document.getElementById('waterDateFilterSelect')?.value || 'daily';
@@ -439,7 +438,6 @@ function initDashboard() {
     else sleepList.push({ value: hours, date: isoDate });
 
     localStorage.setItem("sleepList", JSON.stringify(sleepList));
-    alert(`Sleep hours saved for ${new Date(isoDate).toLocaleDateString('en-GB')}!`);
 
     const stepSize = parseInt(document.getElementById('sleepStepSizeSelect')?.value || '1');
     const filter = document.getElementById('sleepDateFilterSelect')?.value || 'daily';
@@ -470,7 +468,6 @@ function initDashboard() {
     activities.push(newActivity);
     localStorage.setItem("activities", JSON.stringify(activities));
 
-    alert("Activity saved successfully!");
     this.reset();
     displayActivities();
   });
@@ -481,4 +478,6 @@ function initDashboard() {
 
 
 
-onDomReady(initDashboard);
+if (typeof document !== "undefined") {
+  onDomReady(initDashboard);
+}

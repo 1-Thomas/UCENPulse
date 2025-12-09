@@ -5,15 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log Activity</title>
 
- 
     <link rel="stylesheet" href="style.css">
-
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body>
-   
     <div id="navbar"></div>
     <script>
         fetch('navbar.html')
@@ -23,7 +19,9 @@
 
     <div class="page-wrapper">
         <section class="activity-form-section">
-            <h2 class="section-title"><i class="fa-solid fa-person-running"></i> Log Your Activity</h2>
+            <h2 class="section-title">
+                <i class="fa-solid fa-person-running"></i> Log Your Activity
+            </h2>
 
             <form id="activityForm" class="form-card">
 
@@ -64,18 +62,17 @@
             </form>
         </section>
 
-           <section class="activities-section">
-                <div class="activities-header">
-                    <h2 class="section-title">Recent Activities</h2>
-                    <a href="all_activities.html" class="see-more-link">See more &raquo;</a>
-                </div>
+        <section class="activities-section">
+            <div class="activities-header">
+                <h2 class="section-title">Recent Activities</h2>
+                <a href="all_activities.html" class="see-more-link">See more &raquo;</a>
+            </div>
 
-                <div id="activitiesList" class="activities-container"></div>
-            </section>
+            <div id="activitiesList" class="activities-container"></div>
+        </section>
+    </div>
 
-
-
-     <script>
+    <script>
         function getActivityIcon(type) {
             const cleanType = type.trim().toLowerCase();
 
@@ -92,7 +89,7 @@
             return iconMap[cleanType] || "fa-clipboard-list";
         }
 
-       function displayRecentActivities() {
+        function displayRecentActivities() {
             const activities = JSON.parse(localStorage.getItem("activities")) || [];
             const container = document.getElementById("activitiesList");
             container.innerHTML = "";
@@ -102,8 +99,10 @@
                 return;
             }
 
-            
-            const recentActivities = activities.slice(-5).reverse();
+            // Sort by most recent first
+            const recentActivities = activities
+                .sort((a, b) => new Date(b.time) - new Date(a.time))
+                .slice(0, 5); // Get top 5 most recent
 
             recentActivities.forEach(activity => {
                 const icon = getActivityIcon(activity.activityType);
@@ -115,7 +114,7 @@
                             <i class="fa-solid ${icon} activity-icon"></i>
                             <span class="activity-title">${activity.activityType}</span>
                         </div>
-                        <span class="activity-date">${activity.time}</span>
+                        <span class="activity-date">${new Date(activity.time).toLocaleDateString('en-GB')}</span>
                     </header>
 
                     <p><strong>Duration:</strong> ${activity.duration}</p>
@@ -136,7 +135,6 @@
                 const activityType = document.getElementById("activityType").value;
                 const duration = document.getElementById("duration").value;
                 const notes = document.getElementById("notes").value;
-                const dateSaved = new Date().toLocaleString();
 
                 const activities = JSON.parse(localStorage.getItem("activities")) || [];
 
@@ -144,22 +142,24 @@
                     activityType,
                     duration,
                     notes,
-                    time: dateSaved
+                    time: new Date().toISOString()  // better for sorting
                 };
 
                 activities.push(newActivity);
                 localStorage.setItem("activities", JSON.stringify(activities));
 
-                alert("Activity saved successfully!");
+              
+
+                // Reset form & immediately refresh the Recent Activities section
                 activityForm.reset();
-                displayAllActivities();
+                displayRecentActivities();
+
+                // Optional: let all_activities.html know there was an update
+                localStorage.setItem("refreshActivities", "true");
             });
         }
     </script>
 
-
-   
     <script src="app.js"></script>
-
 </body>
 </html>

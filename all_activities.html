@@ -142,7 +142,11 @@
             return;
         }
 
-        activities.forEach(activity => {
+        const sortedActivities = activities.sort(
+            (a, b) => new Date(b.time) - new Date(a.time)
+        );
+
+        sortedActivities.forEach(activity => {
             const icon = getActivityIcon(activity.activityType);
 
             container.innerHTML += `
@@ -152,7 +156,7 @@
                         <i class="fa-solid ${icon} activity-icon"></i>
                         <span class="activity-title">${activity.activityType}</span>
                     </div>
-                    <span class="activity-date">${activity.time}</span>
+                    <span class="activity-date">${new Date(activity.time).toLocaleDateString('en-GB')}</span>
                 </header>
 
                 <p><strong>Duration:</strong> ${activity.duration} minutes</p>
@@ -162,6 +166,7 @@
     }
 
     loadAllActivities();
+
 </script>
 
 </body>
