@@ -88,57 +88,63 @@ describe("initDashboard()", () => {
     expect(config.options.scales.y.ticks.stepSize).toBe(2000);
   });
 
-  test("clicking saveBtn1 stores steps and triggers a chart redraw", () => {
-    initDashboard();
-    chartMock.mockClear();
+  test("displayActivities shows only activities from the last 7 days", () => {
+    const today = new Date();
+    const todayStr = today.toISOString();
 
-    const stepsInput = document.getElementById("steps");
-    const saveBtn = document.getElementById("saveBtn1");
-    const stepSizeSelect = document.getElementById("stepSizeSelect");
-    const dateFilterSelect = document.getElementById("dateFilterSelect");
-
-
-    stepSizeSelect.value = "1500";
-    dateFilterSelect.value = "daily";
-    stepsInput.value = "5000";
-
- 
-    saveBtn.click();
-
-    const raw = localStorage.getItem("stepsList");
-    expect(raw).not.toBeNull();
-
-    const stepsList = JSON.parse(raw);
-    expect(Array.isArray(stepsList)).toBe(true);
-    expect(stepsList.length).toBeGreaterThan(0);
+    const recentDate = new Date();
+    recentDate.setDate(today.getDate() - 3);
+    const recentStr = recentDate.toISOString();
 
    
-    expect(chartMock).toHaveBeenCalled();
-    });
+    const oldDate = new Date();
+    oldDate.setDate(today.getDate() - 10);
+    const oldStr = oldDate.toISOString();
 
+    
+    const activities = [
+      {
+        activityType: "Running",
+        duration: "20 mins",
+        notes: "Today activity",
+        time: todayStr,
+      },
+      {
+        activityType: "Cycling",
+        duration: "40 mins",
+        notes: "Recent activity",
+        time: recentStr,
+      },
+      {
+        activityType: "Yoga",
+        duration: "60 mins",
+        notes: "Old activity",
+        time: oldStr, 
+      }
+    ];
 
-
-  test("clicking saveBtn1 updates existing entry for today instead of adding a new one", () => {
-    const todayIso = new Date().toISOString().split("T")[0];
-    localStorage.setItem(
-      "stepsList",
-      JSON.stringify([{ date: todayIso, value: "3000" }])
-    );
+    localStorage.setItem("activities", JSON.stringify(activities));
 
     initDashboard();
-    chartMock.mockClear();
 
-    const stepsInput = document.getElementById("steps");
-    const saveBtn = document.getElementById("saveBtn1");
+    const container = document.getElementById("activitiesList");
 
-    stepsInput.value = "8000";
+    
+    const cards = container.querySelectorAll(".activity-card");
 
-    saveBtn.click();
+  
+    expect(cards.length).toBe(2);
 
-    const stepsList = JSON.parse(localStorage.getItem("stepsList"));
-    expect(stepsList.length).toBe(1);
-    expect(stepsList[0]).toEqual({ date: todayIso, value: "8000" });
+    
+    const titles = [...cards].map(c =>
+      c.querySelector(".activity-title").textContent.trim()
+    );
+
+    expect(titles).toContain("Running");
+    expect(titles).toContain("Cycling");
+    expect(titles).not.toContain("Yoga");
   });
+
   test("submitting activity form adds a new activity to localStorage", () => {
     initDashboard(); 
 
@@ -203,6 +209,84 @@ describe("initDashboard()", () => {
       })
     );
   });
+  
+  test("clicking saveBtn1 stores today's steps in localStorage", () => {
+
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2025-12-12T10:00:00.000Z"));
+
+    initDashboard();
+    chartMock.mockClear();
+
+    const stepsInput = document.getElementById("steps");
+    const saveBtn = document.getElementById("saveBtn1");
+
+    stepsInput.value = "5000";
+    saveBtn.click();
+
+    const stored = JSON.parse(localStorage.getItem("stepsList"));
+    expect(stored).toEqual([{ value: "5000", date: "2025-12-12" }]);
+
+    expect(chartMock).toHaveBeenCalledTimes(1);
+
+    jest.useRealTimers();
+  });
+
+  test("clicking saveBtn1 stores steps and triggers a chart redraw", () => {
+    initDashboard();
+    chartMock.mockClear();
+
+    const stepsInput = document.getElementById("steps");
+    const saveBtn = document.getElementById("saveBtn1");
+    const stepSizeSelect = document.getElementById("stepSizeSelect");
+    const dateFilterSelect = document.getElementById("dateFilterSelect");
+
+
+    stepSizeSelect.value = "1500";
+    dateFilterSelect.value = "daily";
+    stepsInput.value = "5000";
+
+ 
+    saveBtn.click();
+
+    const raw = localStorage.getItem("stepsList");
+    expect(raw).not.toBeNull();
+
+    const stepsList = JSON.parse(raw);
+    expect(Array.isArray(stepsList)).toBe(true);
+    expect(stepsList.length).toBeGreaterThan(0);
+
+   
+    expect(chartMock).toHaveBeenCalled();
+    });
+
+
+
+  test("clicking saveBtn1 updates existing entry for today instead of adding a new one", () => {
+    const todayIso = new Date().toISOString().split("T")[0];
+    localStorage.setItem(
+      "stepsList",
+      JSON.stringify([{ date: todayIso, value: "3000" }])
+    );
+
+    initDashboard();
+    chartMock.mockClear();
+
+    const stepsInput = document.getElementById("steps");
+    const saveBtn = document.getElementById("saveBtn1");
+
+    stepsInput.value = "8000";
+
+    saveBtn.click();
+
+    const stepsList = JSON.parse(localStorage.getItem("stepsList"));
+    expect(stepsList.length).toBe(1);
+    expect(stepsList[0]).toEqual({ date: todayIso, value: "8000" });
+  });
+
+
+
+
 
 });
 

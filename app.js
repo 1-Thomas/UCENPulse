@@ -9,7 +9,6 @@ import {
   setSleepChart
 } from './state.js';
 
-
 function onDomReady(fn) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', fn);
@@ -261,7 +260,7 @@ function drawSleepChart(stepSize = 1, filterType = 'daily') {
 /* Dashboard Activities */
 
 export function getActivityIcon(type) {
-  const clean = type.trim().toLowerCase();
+  const clean = (type ?? "").trim().toLowerCase();
   return {
     "workout": "fa-dumbbell",
     "running": "fa-person-running",
@@ -272,6 +271,7 @@ export function getActivityIcon(type) {
     "gym": "fa-heart-pulse",
   }[clean] || "fa-clipboard-list";
 }
+
 
 export function displayActivities() {
   const activities = JSON.parse(localStorage.getItem("activities")) || [];
@@ -286,7 +286,7 @@ export function displayActivities() {
 
   const recent = activities
     .filter(a => new Date(a.time) >= weekAgo)
-    .sort((a, b) => new Date(b.time) - new Date(a.time)); // <-- SORT BY MOST RECENT
+    .sort((a, b) => new Date(b.time) - new Date(a.time));
 
   if (recent.length === 0) {
     container.innerHTML = `<p class="no-activity-message">No activities recorded in the last 7 days.</p>`;
@@ -305,12 +305,48 @@ export function displayActivities() {
           <span class="activity-date">${new Date(a.time).toLocaleDateString('en-GB')}</span>
         </header>
         <p><strong>Duration:</strong> ${a.duration}</p>
-        <p><strong>Notes:</strong> ${a.notes}</p>
+        <p><strong>Notes:</strong> ${a.notes || "None"}</p>
       </div>
     `;
   });
 }
 
+/* Recent Activities on Activities Page*/
+
+export function displayRecentActivities() {
+  const activities = JSON.parse(localStorage.getItem("activities")) || [];
+  const container = document.getElementById("activitiesList");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (activities.length === 0) {
+    container.innerHTML = `<p class="no-activity-message">No activities recorded yet.</p>`;
+    return;
+  }
+
+  const recentActivities = activities
+    .sort((a, b) => new Date(b.time) - new Date(a.time))
+    .slice(0, 5);
+
+  recentActivities.forEach(a => {
+    const icon = getActivityIcon(a.activityType);
+
+    container.innerHTML += `
+      <div class="activity-card">
+        <header class="card-header">
+          <div class="activity-header-left">
+            <i class="fa-solid ${icon} activity-icon"></i>
+            <span class="activity-title">${a.activityType}</span>
+          </div>
+          <span class="activity-date">${new Date(a.time).toLocaleDateString('en-GB')}</span>
+        </header>
+        <p><strong>Duration:</strong> ${a.duration}</p>
+        <p><strong>Notes:</strong> ${a.notes || "None"}</p>
+      </div>
+    `;
+  });
+}
 
 export function initDashboard() {
   /* Steps Input */
@@ -345,7 +381,6 @@ export function initDashboard() {
 
   drawStepsChart(1000);
 
-
   /* Calories Input */
   document.getElementById('calorieStepSizeSelect')?.addEventListener('change', function () {
     const filter = document.getElementById('calorieDateFilterSelect')?.value || 'daily';
@@ -377,7 +412,6 @@ export function initDashboard() {
   });
 
   drawCaloriesChart(100);
-
 
   /* Water Input */
   document.getElementById('waterStepSizeSelect')?.addEventListener('change', function () {
@@ -412,7 +446,6 @@ export function initDashboard() {
 
   drawWaterChart(500);
 
-
   /* Sleep Input */
   document.getElementById('sleepStepSizeSelect')?.addEventListener('change', function () {
     const filter = document.getElementById('sleepDateFilterSelect')?.value || 'daily';
@@ -446,7 +479,6 @@ export function initDashboard() {
 
   drawSleepChart(1);
 
-
   /* Activities Form */
   document.getElementById("activityForm")?.addEventListener("submit", function (event) {
     event.preventDefault();
@@ -461,7 +493,7 @@ export function initDashboard() {
       activityType: typeInput.value,
       duration: durationInput.value,
       notes: notesInput.value,
-      time: new Date().toLocaleString()
+      time: new Date().toISOString()
     };
 
     const activities = JSON.parse(localStorage.getItem("activities")) || [];
@@ -472,11 +504,8 @@ export function initDashboard() {
     displayActivities();
   });
 
-
   displayActivities();
 }
-
-
 
 if (typeof document !== "undefined") {
   onDomReady(initDashboard);

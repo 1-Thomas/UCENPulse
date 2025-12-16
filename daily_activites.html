@@ -99,10 +99,9 @@
                 return;
             }
 
-            // Sort by most recent first
             const recentActivities = activities
                 .sort((a, b) => new Date(b.time) - new Date(a.time))
-                .slice(0, 5); // Get top 5 most recent
+                .slice(0, 5); 
 
             recentActivities.forEach(activity => {
                 const icon = getActivityIcon(activity.activityType);
@@ -142,7 +141,7 @@
                     activityType,
                     duration,
                     notes,
-                    time: new Date().toISOString()  // better for sorting
+                    time: new Date().toISOString()  
                 };
 
                 activities.push(newActivity);
@@ -150,11 +149,11 @@
 
               
 
-                // Reset form & immediately refresh the Recent Activities section
+                
                 activityForm.reset();
                 displayRecentActivities();
 
-                // Optional: let all_activities.html know there was an update
+                
                 localStorage.setItem("refreshActivities", "true");
             });
         }

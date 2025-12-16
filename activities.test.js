@@ -2,11 +2,10 @@
  * @jest-environment jsdom
  */
 
-import { jest } from "@jest/globals";
-import { getActivityIcon, displayActivities } from "./app.js";
+import { getActivityIcon, displayRecentActivities } from "./app.js";
 
 describe("getActivityIcon()", () => {
-  test("returns correct icon)", () => {
+  test("returns correct icon", () => {
     expect(getActivityIcon("workout")).toBe("fa-dumbbell");
     expect(getActivityIcon(" Running ")).toBe("fa-person-running");
     expect(getActivityIcon("CYCLING")).toBe("fa-bicycle");
@@ -23,122 +22,97 @@ describe("getActivityIcon()", () => {
   });
 });
 
-describe("displayActivities()", () => {
+describe("displayRecentActivities()", () => {
   beforeEach(() => {
- 
-    document.body.innerHTML = `<div id="activitiesList"></div>`;
+    document.body.innerHTML = `<div id="activitiesList" class="activities-container"></div>`;
     localStorage.clear();
   });
 
   test("does nothing if container element is missing", () => {
     document.body.innerHTML = "";
-
-    
-    expect(() => displayActivities()).not.toThrow();
+    expect(() => displayRecentActivities()).not.toThrow();
   });
 
-  test("shows 'no activities' message when none in last 7 days", () => {
-  
-    const now = new Date();
-    const tenDaysAgo = new Date(now);
-    tenDaysAgo.setDate(now.getDate() - 10);
-
-    const activities = [
-      {
-        activityType: "Running",
-        time: tenDaysAgo.toISOString(),
-        duration: "30 mins",
-        notes: "Old run"
-      }
-    ];
-
-    localStorage.setItem("activities", JSON.stringify(activities));
-
-    displayActivities();
+  test("shows 'No activities recorded yet.' when localStorage has none", () => {
+    displayRecentActivities();
 
     const container = document.getElementById("activitiesList");
-    expect(container.innerHTML).toContain("No activities recorded in the last 7 days.");
+    expect(container.innerHTML).toContain("No activities recorded yet.");
     expect(container.querySelectorAll(".activity-card").length).toBe(0);
+    expect(container.querySelector(".no-activity-message")).not.toBeNull();
   });
 
-  test("shows only activities from last 7 days, sorted by newest first", () => {
+  test("renders only the 5 most recent activities, sorted newest-first", () => {
     const now = new Date();
+    const daysAgoISO = (n) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - n);
+      return d.toISOString();
+    };
 
-    const threeDaysAgo = new Date(now);
-    threeDaysAgo.setDate(now.getDate() - 3);
-
-    const oneDayAgo = new Date(now);
-    oneDayAgo.setDate(now.getDate() - 1);
-
-    const eightDaysAgo = new Date(now);
-    eightDaysAgo.setDate(now.getDate() - 8); 
     const activities = [
-      {
-        activityType: "Running",
-        time: threeDaysAgo.toISOString(),
-        duration: "45 mins",
-        notes: "Nice run"
-      },
-      {
-        activityType: "Workout",
-        time: oneDayAgo.toISOString(),
-        duration: "60 mins",
-        notes: "Gym session"
-      },
-      {
-        activityType: "Cycling",
-        time: eightDaysAgo.toISOString(),
-        duration: "30 mins",
-        notes: "Too old"
-      }
+      { activityType: "Running",  time: daysAgoISO(6), duration: "10", notes: "A6" }, 
+      { activityType: "Workout",  time: daysAgoISO(5), duration: "20", notes: "A5" },
+      { activityType: "Cycling",  time: daysAgoISO(4), duration: "30", notes: "A4" },
+      { activityType: "Swimming", time: daysAgoISO(3), duration: "40", notes: "A3" },
+      { activityType: "Walking",  time: daysAgoISO(2), duration: "50", notes: "A2" },
+      { activityType: "Yoga",     time: daysAgoISO(1), duration: "60", notes: "A1" }, 
     ];
 
     localStorage.setItem("activities", JSON.stringify(activities));
-
-    displayActivities();
+    displayRecentActivities();
 
     const container = document.getElementById("activitiesList");
     const cards = container.querySelectorAll(".activity-card");
 
-  
-    expect(cards.length).toBe(2);
+    expect(cards.length).toBe(5);
 
-    const firstTitle = cards[0].querySelector(".activity-title").textContent;
-    const secondTitle = cards[1].querySelector(".activity-title").textContent;
+    const titles = Array.from(cards).map(
+      (card) => card.querySelector(".activity-title").textContent
+    );
 
- 
-    expect(firstTitle).toBe("Workout");
-    expect(secondTitle).toBe("Running");
+    expect(titles).toEqual(["Yoga", "Walking", "Swimming", "Cycling", "Workout"]);
+    expect(titles).not.toContain("Running");
   });
 
-  test("uses the correct icon based on activity type", () => {
-    const now = new Date();
+  test("uses correct icons, en-GB date format, and notes fallback", () => {
+   
+    const time1 = new Date(Date.UTC(2025, 0, 15, 12, 0, 0)).toISOString(); 
+    const time2 = new Date(Date.UTC(2025, 0, 16, 12, 0, 0)).toISOString(); 
 
     const activities = [
-      {
-        activityType: "Running",
-        time: now.toISOString(),
-        duration: "20 mins",
-        notes: "Quick run"
-      },
-      {
-        activityType: "Yoga",
-        time: now.toISOString(),
-        duration: "30 mins",
-        notes: "Stretching"
-      }
+      { activityType: "Running", time: time1, duration: "20", notes: "" },      
+      { activityType: "Yoga",    time: time2, duration: "30" },                
     ];
 
     localStorage.setItem("activities", JSON.stringify(activities));
-
-    displayActivities();
+    displayRecentActivities();
 
     const container = document.getElementById("activitiesList");
-    const icons = container.querySelectorAll(".activity-icon");
+    const cards = container.querySelectorAll(".activity-card");
+    expect(cards.length).toBe(2);
+
+   
+    expect(cards[0].querySelector(".activity-title").textContent).toBe("Yoga");
+    expect(cards[1].querySelector(".activity-title").textContent).toBe("Running");
 
  
-    expect(icons.length).toBe(2);
-    expect(icons[0].className).toContain("fa-person-running");
-    expect(icons[1].className).toContain("fa-spa");
+    const icons = container.querySelectorAll(".activity-icon");
+    expect(icons[0].className).toContain("fa-spa"); 
+    expect(icons[1].className).toContain("fa-person-running"); 
+
+    const expectedYogaDate = new Date(time2).toLocaleDateString("en-GB");
+    const expectedRunDate = new Date(time1).toLocaleDateString("en-GB");
+
+    expect(cards[0].querySelector(".activity-date").textContent).toBe(expectedYogaDate);
+    expect(cards[1].querySelector(".activity-date").textContent).toBe(expectedRunDate);
+
+    const notesLines = Array.from(container.querySelectorAll(".activity-card p"))
+      .map((p) => p.textContent)
+      .filter((t) => t.startsWith("Notes:"));
+
+    expect(notesLines.length).toBe(2);
+    expect(notesLines[0]).toContain("None");
+    expect(notesLines[1]).toContain("None");
   });
 });
