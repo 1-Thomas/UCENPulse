@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  activities Activity[]
+}
+
+model Activity {
+  id          String    @id @default(uuid())
+  userId      String
+  type        String
+  startedAt   DateTime
+  endedAt     DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metrics     Metric[]
+  tags        ActivityTag[]
+}
+
+model Metric {
+  id         String   @id @default(uuid())
+  activityId String
+  name       String
+  unit       String?
+  value      Float
+  recordedAt DateTime @default(now())
+
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId, recordedAt])
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  label String @unique
+
+  activities ActivityTag[]
+}
+
+model ActivityTag {
+  activityId String
+  tagId      String
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, tagId])
+}
