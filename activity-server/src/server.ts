@@ -5,7 +5,8 @@ import dotenv from "dotenv";
 import pinoHttp from "pino-http";
 import { authRouter } from "./auth/authRoutes";
 import { authRequired, AuthedRequest } from "./auth/authRequired";
-
+import { activityRouter } from "./activities/activityRoutes";
+import { metricRouter } from "./metrics/metricRoutes";
 dotenv.config();
 
 export const app = express();
@@ -18,6 +19,8 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/auth", authRouter);
+app.use("/activities", activityRouter);
+app.use("/", metricRouter);
 
 app.get("/me", authRequired, (req: AuthedRequest, res) => {
   res.json({ me: req.user });
