@@ -24,6 +24,8 @@ model Activity {
   startedAt   DateTime
   endedAt     DateTime?
   notes       String?
+  latitude    Float?
+  longitude   Float?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -31,6 +33,7 @@ model Activity {
   metrics     Metric[]
   tags        ActivityTag[]
 }
+
 
 model Metric {
   id         String   @id @default(uuid())

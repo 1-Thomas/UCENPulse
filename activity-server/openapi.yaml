@@ -1,0 +1,29 @@
+openapi: 3.0.0
+info:
+  title: UCENPulse API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+paths:
+  /reports/summary:
+    get:
+      summary: Activity summary report
+      responses:
+        "200": { description: OK }
+  /reports/weekly:
+    get:
+      summary: Weekly activity breakdown
+      parameters:
+        - in: query
+          name: weeks
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
