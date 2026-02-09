@@ -2,10 +2,9 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { prisma } from "../db";
 import { registerSchema, loginSchema } from "../validators/authValidators";
-import { signAccessToken } from "./jwt";
+import { signJwt } from "./jwt";
 
 export const authRouter = Router();
-
 
 authRouter.post("/register", async (req, res, next) => {
   try {
@@ -21,21 +20,19 @@ authRouter.post("/register", async (req, res, next) => {
       select: { id: true, email: true, name: true, createdAt: true },
     });
 
-    const token = signAccessToken({ sub: user.id, email: user.email });
+    const accessToken = signJwt({ sub: user.id, email: user.email });
 
     res.status(201).json({
       user,
-      accessToken: token,
+      accessToken,
     });
   } catch (err: any) {
-    // Zod validation error
     if (err?.name === "ZodError") {
       return next({ status: 400, code: "VALIDATION_ERROR", message: "Invalid input", details: err.issues });
     }
     return next(err);
   }
 });
-
 
 authRouter.post("/login", async (req, res, next) => {
   try {
@@ -47,11 +44,11 @@ authRouter.post("/login", async (req, res, next) => {
     const ok = await bcrypt.compare(input.password, user.password);
     if (!ok) return next({ status: 401, code: "INVALID_CREDENTIALS", message: "Invalid credentials" });
 
-    const token = signAccessToken({ sub: user.id, email: user.email });
+    const accessToken = signJwt({ sub: user.id, email: user.email });
 
     res.json({
       user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
-      accessToken: token,
+      accessToken,
     });
   } catch (err: any) {
     if (err?.name === "ZodError") {

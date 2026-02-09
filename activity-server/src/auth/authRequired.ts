@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "./jwt";
+import { verifyJwt } from "./jwt";
 
 export type AuthedRequest = Request & { user?: { id: string; email: string } };
 
@@ -12,7 +12,7 @@ export function authRequired(req: AuthedRequest, _res: Response, next: NextFunct
   }
 
   try {
-    const payload = verifyAccessToken(token);
+    const payload = verifyJwt(token);
     req.user = { id: payload.sub, email: payload.email };
     return next();
   } catch {
