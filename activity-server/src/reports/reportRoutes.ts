@@ -3,83 +3,81 @@ import { prisma } from "../db";
 import { authRequired, AuthedRequest } from "../auth/authRequired";
 import { z } from "zod";
 
+const first = (v: unknown) => (Array.isArray(v) ? v[0] : v);
+
+const summaryQuerySchema = z.object({
+  from: z.preprocess(first, z.string().datetime().optional()),
+  to: z.preprocess(first, z.string().datetime().optional()),
+});
+
 export const reportRouter = Router();
 reportRouter.use(authRequired);
 
-// GET /reports/summary
-// Aggregates activities by type + total duration
+
 reportRouter.get("/summary", async (req: AuthedRequest, res, next) => {
   try {
+    const q = summaryQuerySchema.parse(req.query);
+    const userId = req.user!.id;
+
+    const where: any = { userId };
+
+    if (q.from || q.to) {
+      where.startedAt = {};
+      if (q.from) where.startedAt.gte = new Date(q.from);
+      if (q.to) where.startedAt.lte = new Date(q.to);
+    }
+
+  
     const activities = await prisma.activity.findMany({
-      where: { userId: req.user!.id },
-      select: {
-        type: true,
-        startedAt: true,
-        endedAt: true,
-      },
+      where,
+      include: { metrics: true },
+      orderBy: { startedAt: "desc" },
     });
+
+    const totalActivities = activities.length;
 
     const byType: Record<string, { count: number; minutes: number }> = {};
 
     for (const a of activities) {
-      byType[a.type] ??= { count: 0, minutes: 0 };
-      byType[a.type].count++;
+      const type = a.type;
+      if (!byType[type]) byType[type] = { count: 0, minutes: 0 };
+      byType[type].count += 1;
 
       if (a.endedAt) {
-        const mins =
-          (a.endedAt.getTime() - a.startedAt.getTime()) / 60000;
-        if (mins > 0) byType[a.type].minutes += mins;
+        const ms = new Date(a.endedAt).getTime() - new Date(a.startedAt).getTime();
+        const mins = ms > 0 ? ms / 60000 : 0;
+        byType[type].minutes += mins;
       }
     }
 
-    res.json({
-      totalActivities: activities.length,
-      byType,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /reports/weekly?weeks=8
-reportRouter.get("/weekly", async (req: AuthedRequest, res, next) => {
-  try {
-    const q = z
-      .object({
-        weeks: z.coerce.number().min(1).max(52).default(8),
-      })
-      .parse(req.query);
-
-    const end = new Date();
-    const start = new Date(
-      end.getTime() - q.weeks * 7 * 24 * 60 * 60 * 1000
-    );
-
-    const activities = await prisma.activity.findMany({
-      where: {
-        userId: req.user!.id,
-        startedAt: { gte: start, lte: end },
-      },
-      select: {
-        type: true,
-        startedAt: true,
-        endedAt: true,
-      },
-    });
-
-    const weeks: Record<string, number> = {};
-
+    const metricTotals: Record<string, number> = {};
     for (const a of activities) {
-      const week = a.startedAt.toISOString().slice(0, 10);
-      weeks[week] ??= 0;
-      weeks[week]++;
+      for (const m of a.metrics) {
+        const key = `${m.name}:${m.unit}`;
+        metricTotals[key] = (metricTotals[key] ?? 0) + Number(m.value);
+      }
     }
 
-    res.json({
-      range: { start, end },
-      weeks,
+    const metrics = Object.entries(metricTotals).map(([k, total]) => {
+      const [name, unit] = k.split(":");
+      return { name, unit, total };
     });
-  } catch (err) {
+
+    res.json({
+      range: { from: q.from ?? null, to: q.to ?? null },
+      totalActivities,
+      byType,
+      metrics,
+    });
+  } catch (err: any) {
+    if (err?.name === "ZodError") {
+      return next({
+        status: 400,
+        code: "VALIDATION_ERROR",
+        message: "Invalid query",
+        details: err.issues,
+      });
+    }
     next(err);
   }
 });

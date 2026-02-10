@@ -4,11 +4,24 @@ import { prisma, pool } from "../db";
 
 
 
-async function registerAndLogin(email: string, password: string) {
-  await request(app).post("/auth/register").send({ email, password, name: "T" });
-  const login = await request(app).post("/auth/login").send({ email, password });
+async function registerAndLogin(email: string, password: string, testKey = "feature3") {
+  const reg = await request(app)
+    .post("/auth/register")
+    .set("x-test-key", testKey)
+    .send({ email, password, name: "T" });
+
+  if (![201, 409].includes(reg.status)) throw new Error(`register failed: ${reg.status}`);
+
+  const login = await request(app)
+    .post("/auth/login")
+    .set("x-test-key", testKey)
+    .send({ email, password });
+
+  if (login.status !== 200) throw new Error(`login failed: ${login.status}`);
+
   return login.body.accessToken as string;
 }
+
 
 describe("Feature 3 integration: Activities + Metrics + Ownership", () => {
   const user1 = { email: "u1@example.com", password: "Password123!" };
@@ -24,7 +37,7 @@ describe("Feature 3 integration: Activities + Metrics + Ownership", () => {
   });
 
   test("user can CRUD activity and metric", async () => {
-    const token = await registerAndLogin(user1.email, user1.password);
+    const token = await registerAndLogin(user1.email, user1.password, "feature3-u1");
 
 
     const created = await request(app)
@@ -87,7 +100,8 @@ describe("Feature 3 integration: Activities + Metrics + Ownership", () => {
 
     const activityId = created.body.id;
 
-    const token2 = await registerAndLogin(user2.email, user2.password);
+    const token2 = await registerAndLogin(user2.email, user2.password, "feature3-u2");
+
 
     await request(app)
       .get(`/activities/${activityId}`)
