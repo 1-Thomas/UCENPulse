@@ -16,47 +16,100 @@ const createMetricSchema = z.object({
 
 const updateMetricSchema = createMetricSchema.partial();
 
-// POST /activities/:activityId/metrics
-metricRouter.post(
-  "/activities/:activityId/metrics",
-  async (req: AuthedRequest, res, next) => {
-    try {
-      const input = createMetricSchema.parse(req.body);
-      const activityId = String(req.params.activityId);
-      const userId = req.user!.id;
 
-      const owns = await prisma.activity.findFirst({
-        where: { id: activityId, userId },
-      });
-      if (!owns)
-        return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+metricRouter.post("/activities/:activityId/metrics", async (req: AuthedRequest, res, next) => {
+  try {
+    const input = createMetricSchema.parse(req.body);
+    const activityId = String(req.params.activityId);
+    const userId = req.user!.id;
 
-      const metric = await prisma.metric.create({
+    const owns = await prisma.activity.findFirst({
+      where: { id: activityId, userId },
+    });
+    if (!owns) {
+      return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    }
+
+    
+    const recordedAt = new Date();
+    const unit = input.unit ?? null;
+
+    
+    const existing = await prisma.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT m."id"
+        FROM "Metric" m
+        WHERE m."activityId" = ${activityId}
+          AND m."name" = ${input.name}
+          AND COALESCE(m."unit",'') = COALESCE(${unit ?? ""},'')
+          AND (m."recordedAt" AT TIME ZONE 'Europe/London')::date
+              = (${recordedAt}::timestamptz AT TIME ZONE 'Europe/London')::date
+        ORDER BY m."recordedAt" DESC
+        LIMIT 1
+      `
+    );
+
+    const result = await prisma.$transaction(async (tx) => {
+      if (existing.length > 0) {
+        const keepId = existing[0].id;
+
+
+        const updated = await tx.metric.update({
+          where: { id: keepId },
+          data: {
+            name: input.name,
+            unit,
+            value: input.value,     
+            recordedAt,             
+          },
+        });
+
+      
+        await tx.$executeRaw(
+          Prisma.sql`
+            DELETE FROM "Metric"
+            WHERE "activityId" = ${activityId}
+              AND "name" = ${input.name}
+              AND COALESCE("unit",'') = COALESCE(${unit ?? ""},'')
+              AND ("recordedAt" AT TIME ZONE 'Europe/London')::date
+                  = (${recordedAt}::timestamptz AT TIME ZONE 'Europe/London')::date
+              AND "id" <> ${keepId}
+          `
+        );
+
+        return { status: 200, metric: updated };
+      }
+
+      
+      const created = await tx.metric.create({
         data: {
           activityId,
           name: input.name,
-          unit: input.unit,
+          unit,
           value: input.value,
-          recordedAt: input.recordedAt
-            ? new Date(input.recordedAt)
-            : undefined,
+          recordedAt,
         },
       });
 
-      res.status(201).json(metric);
-    } catch (err: any) {
-      if (err?.name === "ZodError") {
-        return next({
-          status: 400,
-          code: "VALIDATION_ERROR",
-          message: "Invalid input",
-          details: err.issues,
-        });
-      }
-      next(err);
+      return { status: 201, metric: created };
+    });
+
+    res.status(result.status).json(result.metric);
+  } catch (err: any) {
+    if (err?.name === "ZodError") {
+      return next({
+        status: 400,
+        code: "VALIDATION_ERROR",
+        message: "Invalid input",
+        details: err.issues,
+      });
     }
+    next(err);
   }
-);
+});
+
+
+
 
 // PATCH /metrics/:id
 metricRouter.patch("/metrics/:id", async (req: AuthedRequest, res, next) => {

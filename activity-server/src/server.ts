@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-
+import dotenv from "dotenv";
 import pinoHttp from "pino-http";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
@@ -11,49 +11,49 @@ import { authRequired, AuthedRequest } from "./auth/authRequired";
 import { activityRouter } from "./activities/activityRoutes";
 import { metricRouter } from "./metrics/metricRoutes";
 import { reportRouter } from "./reports/reportRoutes";
-import { authLimiter, apiLimiter } from "./middleware/rateLimiters";
 
-import { requestId } from "./middleware/requestId";
-import { prisma } from "./db";
-
-
+dotenv.config();
 
 export const app = express();
-app.use(requestId);
+
+app.use(pinoHttp());
+app.use(helmet());
+
+
+const allowedOrigins = new Set([
+  "http://127.0.0.1:5500", 
+  "http://localhost:5500",
+  "http://127.0.0.1:5501", 
+  "http://localhost:5501",
+  "http://localhost:5173", 
+  "http://127.0.0.1:5173",
+]);
+
 app.use(
-  pinoHttp({
-    enabled: process.env.NODE_ENV !== "test",
+  cors({
+    origin: (origin, cb) => {
+      
+      if (!origin) return cb(null, true);
+
+ 
+      if (allowedOrigins.has(origin)) return cb(null, true);
+
+      return cb(new Error(`CORS blocked origin: ${origin}`));
+    },
+    credentials: true,
   })
 );
-
-app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
-
-app.get("/ready", async (_req, res, next) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ ready: true });
-  } catch (e) {
-    next({ status: 503, code: "NOT_READY", message: "Database not ready" });
-  }
-});
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-
-const swaggerDoc = YAML.load("./openapi.yaml");
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
-
-
-
-app.use("/auth", authLimiter, authRouter);
-app.use(apiLimiter);
-
+app.use("/auth", authRouter);
 app.use("/activities", activityRouter);
 app.use("/", metricRouter);
 app.use("/reports", reportRouter);
 
+const swaggerDoc = YAML.load("./openapi.yaml");
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 app.get("/me", authRequired, (req: AuthedRequest, res) => {
   res.json({ me: req.user });
@@ -71,16 +71,3 @@ app.use((err: any, req: any, res: any, _next: any) => {
     },
   });
 });
-
-
-
-
-
-
-
-const allowedOrigin = process.env.CORS_ORIGIN ?? "http://localhost:5173";
-app.use(cors({ origin: allowedOrigin, credentials: true }));
-
-
-
-

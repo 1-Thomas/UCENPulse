@@ -2,10 +2,10 @@ import { z } from "zod";
 
 export const createActivitySchema = z.object({
   type: z.string().min(1).max(50),
-  startedAt: z.string().datetime(),      // ISO string from client
+  startedAt: z.string().datetime(),      
   endedAt: z.string().datetime().optional(),
   notes: z.string().max(500).optional(),
-  tags: z.array(z.string().min(1).max(30)).optional(), // optional tag labels
+  tags: z.array(z.string().min(1).max(30)).optional(), 
 });
 
 export const updateActivitySchema = createActivitySchema.partial();

@@ -134,6 +134,49 @@ components:
       additionalProperties: false
 
 paths:
+  /reports/metric-series:
+    get:
+      tags: [Metrics]
+      summary: Chart data for a metric grouped by time bucket
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema: { type: string }
+        - in: query
+          name: unit
+          required: false
+          schema: { type: string }
+        - in: query
+          name: bucket
+          required: false
+          schema:
+            type: string
+            enum: [daily, monthly, yearly]
+            default: daily
+        - in: query
+          name: from
+          required: false
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          required: false
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /health:
     get:
       tags: [Health]
