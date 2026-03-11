@@ -89,13 +89,10 @@
             return iconMap[cleanType] || "fa-clipboard-list";
         }
 
-        async function displayRecentActivities() {
+        function displayRecentActivities() {
+            const activities = JSON.parse(localStorage.getItem("activities")) || [];
             const container = document.getElementById("activitiesList");
-            if (!container) return;
-
             container.innerHTML = "";
-
-            const activities = await loadAllActivities();
 
             if (activities.length === 0) {
                 container.innerHTML = `<p class="no-activity-message">No activities recorded yet.</p>`;
@@ -103,29 +100,27 @@
             }
 
             const recentActivities = activities
-                .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
-                .slice(0, 5);
+                .sort((a, b) => new Date(b.time) - new Date(a.time))
+                .slice(0, 5); 
 
-            recentActivities.forEach(a => {
-                const icon = getActivityIcon(a.type);
+            recentActivities.forEach(activity => {
+                const icon = getActivityIcon(activity.activityType);
 
                 container.innerHTML += `
                 <div class="activity-card">
                     <header class="card-header">
-                    <div class="activity-header-left">
-                        <i class="fa-solid ${icon} activity-icon"></i>
-                        <span class="activity-title">${a.type}</span>
-                    </div>
-                    <span class="activity-date">
-                        ${new Date(a.startedAt).toLocaleDateString('en-GB')}
-                    </span>
+                        <div class="activity-header-left">
+                            <i class="fa-solid ${icon} activity-icon"></i>
+                            <span class="activity-title">${activity.activityType}</span>
+                        </div>
+                        <span class="activity-date">${new Date(activity.time).toLocaleDateString('en-GB')}</span>
                     </header>
-                    <p><strong>Notes:</strong> ${a.notes || "None"}</p>
-                </div>
-                `;
+
+                    <p><strong>Duration:</strong> ${activity.duration}</p>
+                    <p><strong>Notes:</strong> ${activity.notes || "None"}</p>
+                </div>`;
             });
         }
-
 
         displayRecentActivities();
 
@@ -162,9 +157,55 @@
                 localStorage.setItem("refreshActivities", "true");
             });
         }
+
+                // ----------------------
+        // Activities (DB sync)
+        // ----------------------
+
+        function minutesBetween(startISO, endISO) {
+        if (!startISO || !endISO) return null;
+        const start = new Date(startISO);
+        const end = new Date(endISO);
+        const ms = end.getTime() - start.getTime();
+        if (!Number.isFinite(ms) || ms <= 0) return null;
+        return Math.round(ms / 60000);
+        }
+
+        async function createActivityToDb({ type, durationMinutes, notes }) {
+        const startedAt = new Date();
+        const dur = Number(durationMinutes);
+
+        const endedAt =
+            Number.isFinite(dur) && dur > 0
+            ? new Date(startedAt.getTime() + dur * 60000)
+            : undefined;
+
+        const cleanType = String(type ?? "").trim();
+        const tag = cleanType.toLowerCase();
+
+        return apiRequest("POST", "/activities", {
+            type: cleanType,
+            startedAt: startedAt.toISOString(),
+            endedAt: endedAt ? endedAt.toISOString() : undefined,
+            notes: notes?.trim() ? notes.trim() : undefined,
+            tags: tag ? [tag] : [],
+        });
+        }
+
+        async function fetchActivitiesFromDb({ from, to, type, take = 50, skip = 0 } = {}) {
+        const qs = new URLSearchParams();
+        if (from) qs.set("from", from);
+        if (to) qs.set("to", to);
+        if (type) qs.set("type", type);
+        qs.set("take", String(take));
+        qs.set("skip", String(skip));
+        return apiRequest("GET", `/activities?${qs.toString()}`);
+        }
+6
+
     </script>
 
     <script type="module" src="app.js"></script>
-
-</body>
+  </body>
 </html>
+

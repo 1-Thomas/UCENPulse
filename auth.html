@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <main class="page-content">
+    <section class="dashboard-card auth-card">
+      <div class="card-header">
+        <h1>Account</h1>
+        
+      </div>
+
+      <div class="auth-form">
+        <label for="authName">Name</label>
+        <input type="text" id="authName" placeholder="Enter your name" />
+
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" placeholder="Enter your email" />
+
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" placeholder="Enter your password" />
+
+        <div class="auth-buttons">
+          <button id="registerBtn" class="primary-btn">Register</button>
+          <button id="loginBtn" class="secondary-btn">Login</button>
+          <button id="logoutBtn" class="danger-btn">Logout</button>
+        </div>
+
+        <p id="authStatus" class="auth-status">Not logged in</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

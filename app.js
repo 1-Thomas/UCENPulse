@@ -15,6 +15,18 @@ let stepsAuthBlocked = false;
 function getToken() {
   return localStorage.getItem("accessToken");
 }
+async function createActivityToDb({ type, durationMinutes, notes }) {
+  const startedAt = new Date();
+  const endedAt = new Date(startedAt.getTime() + Number(durationMinutes) * 60000);
+
+  return apiRequest("POST", "/activities", {
+    type,
+    startedAt: startedAt.toISOString(),
+    endedAt: endedAt.toISOString(),
+    notes,
+    tags: [type.toLowerCase()],
+  });
+}
 
 async function fetchMetricSeries({ name, unit, bucket = "daily" }) {
   const token = getToken();
@@ -39,43 +51,72 @@ async function fetchMetricSeries({ name, unit, bucket = "daily" }) {
 
   return data;
 }
+function isMetricLike(x) {
+  if (!x || typeof x !== "object") return false;
 
+  // Common metric payload shapes (adjust-free, defensive)
+  return (
+    "metricType" in x ||
+    "metricName" in x ||
+    "metric" in x ||
+    ("value" in x && ("unit" in x || "units" in x)) ||
+    ("reading" in x && ("unit" in x || "units" in x)) ||
+    ("category" in x && String(x.category).toLowerCase().includes("metric"))
+  );
+}
 
-async function apiRequest(method, path, body) {
-  const token = getToken();
-  if (!token) throw new Error("Missing accessToken");
+function isActivityLike(x) {
+  if (!x || typeof x !== "object") return false;
 
-  const r = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  // Activity signature used by your activity renderer
+  const hasType = typeof x.type === "string" && x.type.trim().length > 0;
+  const hasStartedAt = typeof x.startedAt === "string" && x.startedAt.length > 0;
 
-  if (r.status === 401) {
-    localStorage.removeItem("accessToken");
-    throw new Error("Unauthorized (token invalid/expired). Login again.");
-  }
+  // If it looks like a metric, exclude it even if it has overlapping fields
+  if (isMetricLike(x)) return false;
 
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data?.error?.message ?? `Request failed (${r.status})`);
-  return data;
+  return hasType && hasStartedAt;
 }
 
 
+async function apiRequest(method, path, body) {
+  const token = localStorage.getItem("accessToken");
+
+  const headers = {};
+  if (body) headers["Content-Type"] = "application/json";
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (response.status === 401) {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("currentUser");
+    throw new Error("Unauthorized (token invalid/expired). Login again.");
+  }
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message ?? `Request failed (${response.status})`);
+  }
+
+  return data;
+}
 
 function getLocalISODate() {
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`; 
+  return `${y}-${m}-${day}`; // local calendar date
 }
 
 function getUtcDayWindowFromLocalDate(localISO) {
-
+  // localISO = YYYY-MM-DD interpreted as local date
   const [y, m, d] = localISO.split("-").map(Number);
   const startLocal = new Date(y, m - 1, d, 0, 0, 0, 0);
   const endLocal = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
@@ -89,7 +130,7 @@ async function getOrCreateStepsActivityId() {
   const todayLocal = getLocalISODate();
   const { from, to } = getUtcDayWindowFromLocalDate(todayLocal);
 
-  
+  // LOOK UP existing "steps" activities for that day
   const qs = new URLSearchParams({
     type: "steps",
     from,
@@ -101,10 +142,10 @@ async function getOrCreateStepsActivityId() {
   const list = await apiRequest("GET", `/activities?${qs.toString()}`);
   const items = list?.items ?? [];
 
-
+  // Reuse the newest one if it exists
   if (items.length > 0) return items[0].id;
 
- 
+  // Otherwise create exactly one
   const act = await apiRequest("POST", "/activities", {
     type: "steps",
     startedAt: new Date().toISOString(),
@@ -121,19 +162,58 @@ async function saveStepsToDb(stepsCount) {
   return apiRequest("POST", `/activities/${activityId}/metrics`, {
     name: "steps",
     unit: "count",
-    value: stepsCount,             
+    value: stepsCount,              // ABSOLUTE
     recordedAt: new Date().toISOString(),
   });
 }
 
-async function saveActivityToDb({ type, notes, tags, startedAt }) {
-  return apiRequest("POST", "/activities", {
-    type,
-    startedAt: startedAt || new Date().toISOString(),
-    notes: notes || "",
-    tags: tags || [],
-  });
+function minutesBetween(startISO, endISO) {
+  if (!startISO || !endISO) return null;
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  const ms = end.getTime() - start.getTime();
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  return Math.round(ms / 60000);
 }
+
+function toUiActivity(dbActivity) {
+  const mins = minutesBetween(dbActivity.startedAt, dbActivity.endedAt);
+  return {
+    activityType: dbActivity.type,
+    duration: mins === null ? "—" : `${mins} minutes`,
+    notes: dbActivity.notes ?? "",
+    time: dbActivity.startedAt, // used by your renderer
+  };
+}
+
+async function fetchActivitiesFromDb({ from, to, type, take = 50, skip = 0 } = {}) {
+  const qs = new URLSearchParams();
+  if (from) qs.set("from", from);
+  if (to) qs.set("to", to);
+  if (type) qs.set("type", type);
+  qs.set("take", String(take));
+  qs.set("skip", String(skip));
+
+  const res = await apiRequest("GET", `/activities?${qs.toString()}`);
+  const items = Array.isArray(res?.items) ? res.items : [];
+
+  // FILTER OUT METRICS
+  return items.filter(isActivityLike);
+}
+
+
+async function getActivitiesForUi({ from, to, type, take } = {}) {
+  const token = getToken();
+
+  if (token) {
+    const items = await fetchActivitiesFromDb({ from, to, type, take });
+    return items.map(toUiActivity);
+  }
+
+  // fallback
+  return JSON.parse(localStorage.getItem("activities")) || [];
+}
+
 
 
 
@@ -541,62 +621,39 @@ async function displayActivities() {
 
   container.innerHTML = "";
 
-  const activities = await loadAllActivities();
-
   const today = new Date();
   const weekAgo = new Date(today);
   weekAgo.setDate(today.getDate() - 7);
 
+  let activities = [];
+  try {
+    activities = await getActivitiesForUi({
+      from: weekAgo.toISOString(),
+      to: today.toISOString(),
+      take: 100,
+    });
+  } catch (e) {
+    // If DB fetch fails, keep UI functional by falling back
+    activities = JSON.parse(localStorage.getItem("activities")) || [];
+  }
+
   const recent = activities
-    .filter(a => new Date(a.startedAt) >= weekAgo)
-    .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+    .filter(a => new Date(a.time) >= weekAgo)
+    .sort((a, b) => new Date(b.time) - new Date(a.time));
 
   if (recent.length === 0) {
-    container.innerHTML = `<p class="no-activity-message">No activities recorded in the last 7 days.</p>`;
+    container.innerHTML = `<p class="empty-state">No activities logged in the last 7 days.</p>`;
     return;
   }
 
   recent.forEach(a => {
-    const icon = getActivityIcon(a.type);
-
-    container.innerHTML += `
-      <div class="activity-card">
-        <header class="card-header">
-          <div class="activity-header-left">
-            <i class="fa-solid ${icon} activity-icon"></i>
-            <span class="activity-title">${a.type}</span>
-          </div>
-          <span class="activity-date">
-            ${new Date(a.startedAt).toLocaleDateString('en-GB')}
-          </span>
-        </header>
-        <p><strong>Notes:</strong> ${a.notes || "None"}</p>
-      </div>
-    `;
-  });
-}
-
-
-/* Recent Activities on Activities Page*/
-
-export function displayRecentActivities() {
-  const activities = JSON.parse(localStorage.getItem("activities")) || [];
-  const container = document.getElementById("activitiesList");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  if (activities.length === 0) {
-    container.innerHTML = `<p class="no-activity-message">No activities recorded yet.</p>`;
-    return;
-  }
-
-  const recentActivities = activities
-    .sort((a, b) => new Date(b.time) - new Date(a.time))
-    .slice(0, 5);
-
-  recentActivities.forEach(a => {
-    const icon = getActivityIcon(a.activityType);
+    const icon = (a.activityType || "").toLowerCase().includes("gym")
+      ? "fa-dumbbell"
+      : (a.activityType || "").toLowerCase().includes("run")
+      ? "fa-person-running"
+      : (a.activityType || "").toLowerCase().includes("walk")
+      ? "fa-person-walking"
+      : "fa-list-check";
 
     container.innerHTML += `
       <div class="activity-card">
@@ -614,7 +671,45 @@ export function displayRecentActivities() {
   });
 }
 
-export function initDashboard() {
+/* Recent Activities on Activities Page*/
+
+async function displayRecentActivities() {
+  const container = document.getElementById("recentActivities");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  let activities = [];
+  try {
+    activities = await getActivitiesForUi({ take: 50 });
+  } catch (e) {
+    activities = JSON.parse(localStorage.getItem("activities")) || [];
+  }
+
+  const recent = activities
+    .sort((a, b) => new Date(b.time) - new Date(a.time))
+    .slice(0, 5);
+
+  if (recent.length === 0) {
+    container.innerHTML = `<p class="empty-state">No recent activities.</p>`;
+    return;
+  }
+
+  recent.forEach(a => {
+    container.innerHTML += `
+      <div class="activity-row">
+        <div>
+          <div class="activity-title">${a.activityType}</div>
+          <div class="activity-meta">${new Date(a.time).toLocaleDateString('en-GB')} • ${a.duration}</div>
+        </div>
+        <div class="activity-notes">${a.notes || ""}</div>
+      </div>
+    `;
+  });
+}
+
+
+async function initDashboard() {
   
  
   /* Steps Input */
@@ -724,12 +819,8 @@ export function initDashboard() {
   });
 
   document.getElementById('waterDateFilterSelect')?.addEventListener('change', function () {
-    const stepSize = parseInt(
-      document.getElementById('waterStepSizeSelect')?.value || '500',
-      10
-    );
-
-    drawWaterChart(stepSize, this.value).catch(console.error);
+    const stepSize = parseInt(document.getElementById('waterStepSizeSelect')?.value || '500');
+    drawWaterChart(stepSize, this.value);
   });
 
   document.getElementById("saveBtn3")?.addEventListener("click", async () => {
@@ -772,82 +863,174 @@ export function initDashboard() {
   });
 
   document.getElementById("saveBtn4")?.addEventListener("click", async () => {
-    const input = document.getElementById("sleepHours");
-    if (!input) return;
+  const input = document.getElementById("sleepHours");
+  if (!input) return;
 
-    const value = Number(input.value);
-    if (!Number.isFinite(value) || value < 0) return;
+  const value = Number(input.value);
+  if (!Number.isFinite(value) || value < 0) return;
 
-    await saveMetricToDb({
-      type: "sleep",
-      name: "sleep",
-      unit: "hours",
-      value,
-    });
-
-    const stepSize = parseInt(
-      document.getElementById("sleepStepSizeSelect")?.value || "1",
-      10
-    );
-    const filter =
-      document.getElementById("sleepDateFilterSelect")?.value || "daily";
-
-    await drawSleepChart(stepSize, filter);
-
-    input.value = "";
+  await saveMetricToDb({
+    type: "sleep",
+    name: "sleep",
+    unit: "hours",
+    value,
   });
+
+  const stepSize = parseInt(
+    document.getElementById("sleepStepSizeSelect")?.value || "1",
+    10
+  );
+  const filter =
+    document.getElementById("sleepDateFilterSelect")?.value || "daily";
+
+  await drawSleepChart(stepSize, filter);
+
+  input.value = "";
+});
 
   drawSleepChart(1);
 
   /* Activities Form */
- document.getElementById("activityForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  document.getElementById("activityForm")?.addEventListener("submit", async function (event) {
+  event.preventDefault();
 
-    const typeEl = document.getElementById("activityType");
-    const notesEl = document.getElementById("activityNotes");
-    const tagsEl = document.getElementById("activityTags");
-    const dateEl = document.getElementById("activityDate");
+  const typeInput = document.getElementById("activityType");
+  const durationInput = document.getElementById("duration");
+  const notesInput = document.getElementById("notes");
+  if (!typeInput || !durationInput || !notesInput) return;
 
-    if (!typeEl) return;
+  const token = getToken();
+  const type = typeInput.value;
+  const durationMinutes = durationInput.value;
+  const notes = notesInput.value;
 
-    const type = typeEl.value?.trim();
-    if (!type) return;
-
-    const notes = notesEl?.value?.trim() || "";
-    const tags = tagsEl?.value
-      ? tagsEl.value.split(",").map(t => t.trim()).filter(Boolean)
-      : [];
-
-    const startedAt = dateEl?.value
-      ? new Date(dateEl.value).toISOString()
-      : new Date().toISOString();
-
-    await saveActivityToDb({
-      type,
+  if (token) {
+    await createActivityToDb({ type, durationMinutes, notes });
+  } else {
+    // fallback (no login token)
+    const newActivity = {
+      activityType: type,
+      duration: durationMinutes,
       notes,
-      tags,
-      startedAt,
-    });
+      time: new Date().toISOString(),
+    };
+    const activities = JSON.parse(localStorage.getItem("activities")) || [];
+    activities.push(newActivity);
+    localStorage.setItem("activities", JSON.stringify(activities));
+  }
 
-    e.target.reset();
+  this.reset();
+  await displayActivities();
+  await displayRecentActivities();
+});
 
-    if (typeof loadActivities === "function") {
-      await loadActivities();   
+
+  await displayActivities();
+}
+
+
+
+async function loadNavbar() {
+  const container = document.getElementById("navbar-container");
+  if (!container) return;
+
+  const response = await fetch("navbar.html");
+  const html = await response.text();
+  container.innerHTML = html;
+}
+
+function setAuthStatus(message) {
+  const el = document.getElementById("authStatus");
+  if (el) el.textContent = message;
+}
+
+function getCurrentUser() {
+  const raw = localStorage.getItem("currentUser");
+  return raw ? JSON.parse(raw) : null;
+}
+
+function saveAuth(authResponse) {
+  localStorage.setItem("accessToken", authResponse.accessToken);
+  localStorage.setItem("currentUser", JSON.stringify(authResponse.user));
+  setAuthStatus(`Logged in as ${authResponse.user.email}`);
+}
+
+function clearAuth() {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("currentUser");
+  setAuthStatus("Logged out");
+}
+
+
+async function registerUser(name, email, password) {
+  const data = await apiRequest("POST", "/auth/register", {
+    name,
+    email,
+    password,
+  });
+
+  saveAuth(data);
+  return data;
+}
+
+async function loginUser(email, password) {
+  const data = await apiRequest("POST", "/auth/login", {
+    email,
+    password,
+  });
+
+  saveAuth(data);
+  return data;
+}
+
+function initialiseAuthPage() {
+  const existingUser = getCurrentUser();
+  if (existingUser) {
+    setAuthStatus(`Logged in as ${existingUser.email}`);
+  } else {
+    setAuthStatus("Not logged in");
+  }
+
+  document.getElementById("registerBtn")?.addEventListener("click", async () => {
+    try {
+      const name = document.getElementById("authName")?.value.trim() || "";
+      const email = document.getElementById("authEmail")?.value.trim() || "";
+      const password = document.getElementById("authPassword")?.value || "";
+
+      await registerUser(name, email, password);
+      window.location.href = "index.html";
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
     }
   });
 
+  document.getElementById("loginBtn")?.addEventListener("click", async () => {
+    try {
+      const email = document.getElementById("authEmail")?.value.trim() || "";
+      const password = document.getElementById("authPassword")?.value || "";
 
-  displayActivities();
+      await loginUser(email, password);
+      window.location.href = "index.html";
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  });
+
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
+    clearAuth();
+  });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("activitiesList")) {
-    displayRecentActivities().catch(console.error);
-  }
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadNavbar();
+  initialiseAuthPage();
 });
-
 
 if (typeof document !== "undefined") {
   onDomReady(initDashboard);
 }
+
+
 

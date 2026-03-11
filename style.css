@@ -392,3 +392,86 @@ input {
 
 
 
+.page-content {
+  padding: 30px 20px;
+}
+
+.auth-card {
+  max-width: 520px;
+  margin: 30px auto;
+  padding: 24px;
+  border-radius: 18px;
+}
+
+.card-header h1 {
+  margin-bottom: 8px;
+}
+
+.card-header p {
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-form label {
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #d0d0d0;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.primary-btn:hover,
+.secondary-btn:hover,
+.danger-btn:hover {
+  transform: translateY(-1px);
+}
+
+.primary-btn {
+  background: #2d7ff9;
+  color: white;
+}
+
+.secondary-btn {
+  background: #eceff5;
+  color: #1f2937;
+}
+
+.danger-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.auth-status {
+  margin-top: 10px;
+  font-weight: 600;
+}
