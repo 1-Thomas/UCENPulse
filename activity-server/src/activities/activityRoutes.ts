@@ -2,9 +2,8 @@ import { Router } from "express";
 import { prisma } from "../db";
 import { authRequired, AuthedRequest } from "../auth/authRequired";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { getWeather } from "../services/weatherService";
 
-// ---- helpers to normalise Express query types (string | string[]) ----
 const first = (v: unknown) => (Array.isArray(v) ? v[0] : v);
 
 const listActivitiesSchema = z.object({
@@ -21,18 +20,16 @@ const createActivitySchema = z.object({
   endedAt: z.string().datetime().optional(),
   notes: z.string().max(500).optional(),
   tags: z.array(z.string().min(1).max(30)).optional(),
+  latitude: z.coerce.number().min(-90).max(90).optional(),
+  longitude: z.coerce.number().min(-180).max(180).optional(),
 });
 
 const updateActivitySchema = createActivitySchema.partial();
 
-type ActivityWithRelations = Prisma.ActivityGetPayload<{
-  include: { metrics: true; tags: { include: { tag: true } } };
-}>;
-
-function toApi(a: ActivityWithRelations) {
+function toApi(a: any) {
   return {
     ...a,
-    tags: a.tags.map((t) => t.tag.label),
+    tags: Array.isArray(a.tags) ? a.tags.map((t: any) => t.tag.label) : [],
   };
 }
 
@@ -44,7 +41,7 @@ activityRouter.get("/", async (req: AuthedRequest, res, next) => {
   try {
     const q = listActivitiesSchema.parse(req.query);
 
-    const where: Prisma.ActivityWhereInput = { userId: req.user!.id };
+    const where: any = { userId: req.user!.id };
 
     if (q.type) where.type = q.type;
     if (q.from || q.to) {
@@ -81,11 +78,21 @@ activityRouter.post("/", async (req: AuthedRequest, res, next) => {
     const input = createActivitySchema.parse(req.body);
     const userId = req.user!.id;
 
-    const created = await prisma.$transaction(async (tx) => {
+    let weather: { temperature?: number; weatherCode?: number } = {};
+
+    if (input.latitude !== undefined && input.longitude !== undefined) {
+      try {
+        weather = await getWeather(input.latitude, input.longitude);
+      } catch (error) {
+        console.error("Weather lookup failed:", error);
+      }
+    }
+
+    const created = await prisma.$transaction(async (tx: any) => {
       const labels = input.tags ?? [];
 
       const tags = await Promise.all(
-        labels.map((label) =>
+        labels.map((label: string) =>
           tx.tag.upsert({
             where: { label },
             create: { label },
@@ -94,20 +101,27 @@ activityRouter.post("/", async (req: AuthedRequest, res, next) => {
         )
       );
 
-      return tx.activity.create({
+      const activity = await tx.activity.create({
         data: {
           userId,
           type: input.type,
           startedAt: new Date(input.startedAt),
           endedAt: input.endedAt ? new Date(input.endedAt) : undefined,
           notes: input.notes,
-          tags: { create: tags.map((t) => ({ tagId: t.id })) },
+          latitude: input.latitude,
+          longitude: input.longitude,
+          tags: { create: tags.map((t: any) => ({ tagId: t.id })) },
         },
         include: { metrics: true, tags: { include: { tag: true } } },
       });
+
+      return { activity, weather };
     });
 
-    res.status(201).json(toApi(created));
+    res.status(201).json({
+      ...toApi(created.activity),
+      weather,
+    });
   } catch (err: any) {
     if (err?.name === "ZodError") {
       return next({
@@ -131,9 +145,56 @@ activityRouter.get("/:id", async (req: AuthedRequest, res, next) => {
       include: { metrics: true, tags: { include: { tag: true } } },
     });
 
-    if (!a) return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    if (!a) {
+      return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    }
 
     res.json(toApi(a));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /activities/:id/weather
+activityRouter.get("/:id/weather", async (req: AuthedRequest, res, next) => {
+  try {
+    const id = String(req.params.id);
+
+    const activity = await prisma.activity.findFirst({
+      where: { id, userId: req.user!.id },
+      select: {
+        id: true,
+        type: true,
+        startedAt: true,
+        latitude: true,
+        longitude: true,
+      },
+    });
+
+    if (!activity) {
+      return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    }
+
+    if (activity.latitude == null || activity.longitude == null) {
+      return res.json({
+        id: activity.id,
+        type: activity.type,
+        startedAt: activity.startedAt,
+        weather: null,
+        message: "No coordinates stored for this activity",
+      });
+    }
+
+    const weather = await getWeather(activity.latitude, activity.longitude);
+
+    res.json({
+      id: activity.id,
+      type: activity.type,
+      startedAt: activity.startedAt,
+      latitude: activity.latitude,
+      longitude: activity.longitude,
+      weather,
+    });
   } catch (err) {
     next(err);
   }
@@ -146,7 +207,7 @@ activityRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
     const userId = req.user!.id;
     const input = updateActivitySchema.parse(req.body);
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: any) => {
       const existing = await tx.activity.findFirst({ where: { id, userId } });
       if (!existing) return null;
 
@@ -154,7 +215,7 @@ activityRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
         await tx.activityTag.deleteMany({ where: { activityId: id } });
 
         const tags = await Promise.all(
-          input.tags.map((label) =>
+          input.tags.map((label: string) =>
             tx.tag.upsert({
               where: { label },
               create: { label },
@@ -164,7 +225,7 @@ activityRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
         );
 
         await tx.activityTag.createMany({
-          data: tags.map((t) => ({ activityId: id, tagId: t.id })),
+          data: tags.map((t: any) => ({ activityId: id, tagId: t.id })),
           skipDuplicates: true,
         });
       }
@@ -176,12 +237,16 @@ activityRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
           startedAt: input.startedAt ? new Date(input.startedAt) : undefined,
           endedAt: input.endedAt ? new Date(input.endedAt) : undefined,
           notes: input.notes,
+          latitude: input.latitude,
+          longitude: input.longitude,
         },
         include: { metrics: true, tags: { include: { tag: true } } },
       });
     });
 
-    if (!updated) return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    if (!updated) {
+      return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    }
 
     res.json(toApi(updated));
   } catch (err: any) {
@@ -204,7 +269,9 @@ activityRouter.delete("/:id", async (req: AuthedRequest, res, next) => {
     const userId = req.user!.id;
 
     const existing = await prisma.activity.findFirst({ where: { id, userId } });
-    if (!existing) return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    if (!existing) {
+      return next({ status: 404, code: "NOT_FOUND", message: "Activity not found" });
+    }
 
     await prisma.activity.delete({ where: { id } });
     res.status(204).send();

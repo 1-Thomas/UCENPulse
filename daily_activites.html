@@ -1,211 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Activity</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log Activity</title>
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 
 <body>
-    <div id="navbar"></div>
-    <script>
-        fetch('navbar.html')
-            .then(response => response.text())
-            .then(data => document.getElementById('navbar').innerHTML = data);
-    </script>
+  <div id="navbar-container"></div>
 
-    <div class="page-wrapper">
-        <section class="activity-form-section">
-            <h2 class="section-title">
-                <i class="fa-solid fa-person-running"></i> Log Your Activity
-            </h2>
+  <div class="page-wrapper">
+    <section class="activity-form-section">
+      <h2 class="section-title">
+        <i class="fa-solid fa-person-running"></i> Log Your Activity
+      </h2>
 
-            <form id="activityForm" class="form-card">
+      <form id="activityForm" class="form-card">
+        
+        <div class="form-group">
+          <label for="activityType">Activity Type</label>
+          <select id="activityType" required>
+            <option value="Running">Running</option>
+            <option value="Cycling">Cycling</option>
+            <option value="Gym">Gym Session</option>
+            <option value="Swimming">Swimming</option>
+            <option value="Walking">Walking</option>
+            <option value="Yoga">Yoga</option>
+          </select>
+        </div>
 
-                <div class="form-group">
-                    <label for="activityType">Activity Type</label>
-                    <select id="activityType" required>
-                        <option value="Running">Running</option>
-                        <option value="Cycling">Cycling</option>
-                        <option value="Gym">Gym Session</option>
-                        <option value="Swimming">Swimming</option>
-                    </select>
-                </div>
+        <div class="form-group">
+          <label for="duration">Duration</label>
+          <select id="duration" required>
+            <option value="" disabled selected>Select duration</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="90">1.5 hours</option>
+            <option value="120">2 hours</option>
+            <option value="150">2.5 hours</option>
+            <option value="180">3 hours</option>
+          </select>
+        </div>
 
-                <div class="form-group">
-                    <label for="duration">Duration</label>
-                    <select id="duration" required>
-                        <option value="" disabled selected>Select duration</option>
-                        <option value="15">15 minutes</option>
-                        <option value="30">30 minutes</option>
-                        <option value="45">45 minutes</option>
-                        <option value="60">1 hour</option>
-                        <option value="90">1.5 hours</option>
-                        <option value="120">2 hours</option>
-                        <option value="150">2.5 hours</option>
-                        <option value="180">3 hours</option>
-                    </select>
-                </div>
+        <div class="form-group">
+          <label for="notes">Notes</label>
+          <textarea id="notes" rows="4" placeholder="Add any notes... (optional)"></textarea>
+        </div>
 
-                <div class="form-group">
-                    <label for="notes">Notes</label>
-                    <textarea id="notes" rows="4" placeholder="Add any notes... (optional)"></textarea>
-                </div>
+        
+        <div class="form-group">
+          <label>Location (for weather data)</label>
 
-                <button type="submit" class="btn-primary">
-                    <i class="fa-solid fa-check"></i> Save Activity
-                </button>
+          <input
+            type="number"
+            id="latitude"
+            step="any"
+            placeholder="Latitude (e.g. 53.4808)"
+          />
 
-            </form>
-        </section>
+          <input
+            type="number"
+            id="longitude"
+            step="any"
+            placeholder="Longitude (e.g. -2.2426)"
+          />
 
-        <section class="activities-section">
-            <div class="activities-header">
-                <h2 class="section-title">Recent Activities</h2>
-                <a href="all_activities.html" class="see-more-link">See more &raquo;</a>
-            </div>
+          <div style="display: flex; gap: 10px; margin-top: 8px;">
+           
 
-            <div id="activitiesList" class="activities-container"></div>
-        </section>
-    </div>
+            <button type="button" id="useCurrentLocation" class="btn-secondary">
+              Use My Location
+            </button>
+          </div>
 
-    <script>
-        function getActivityIcon(type) {
-            const cleanType = type.trim().toLowerCase();
+         
+        </div>
 
-            const iconMap = {
-                "workout": "fa-dumbbell",
-                "running": "fa-person-running",
-                "cycling": "fa-bicycle",
-                "swimming": "fa-person-swimming",
-                "walking": "fa-person-walking",
-                "yoga": "fa-spa",
-                "gym": "fa-heart-pulse",
-            };
+        <button type="submit" class="btn-primary">
+          <i class="fa-solid fa-check"></i> Save Activity
+        </button>
+      </form>
+    </section>
 
-            return iconMap[cleanType] || "fa-clipboard-list";
-        }
+    <section class="activities-section">
+      <div class="activities-header">
+        <h2 class="section-title">Recent Activities</h2>
+        <a href="all_activities.html" class="see-more-link">See more &raquo;</a>
+      </div>
 
-        function displayRecentActivities() {
-            const activities = JSON.parse(localStorage.getItem("activities")) || [];
-            const container = document.getElementById("activitiesList");
-            container.innerHTML = "";
+      <div id="recentActivities" class="activities-container"></div>
+    </section>
+  </div>
 
-            if (activities.length === 0) {
-                container.innerHTML = `<p class="no-activity-message">No activities recorded yet.</p>`;
-                return;
-            }
-
-            const recentActivities = activities
-                .sort((a, b) => new Date(b.time) - new Date(a.time))
-                .slice(0, 5); 
-
-            recentActivities.forEach(activity => {
-                const icon = getActivityIcon(activity.activityType);
-
-                container.innerHTML += `
-                <div class="activity-card">
-                    <header class="card-header">
-                        <div class="activity-header-left">
-                            <i class="fa-solid ${icon} activity-icon"></i>
-                            <span class="activity-title">${activity.activityType}</span>
-                        </div>
-                        <span class="activity-date">${new Date(activity.time).toLocaleDateString('en-GB')}</span>
-                    </header>
-
-                    <p><strong>Duration:</strong> ${activity.duration}</p>
-                    <p><strong>Notes:</strong> ${activity.notes || "None"}</p>
-                </div>`;
-            });
-        }
-
-        displayRecentActivities();
-
-
-        const activityForm = document.getElementById("activityForm");
-
-        if (activityForm) {
-            activityForm.addEventListener("submit", function(event) {
-                event.preventDefault();
-
-                const activityType = document.getElementById("activityType").value;
-                const duration = document.getElementById("duration").value;
-                const notes = document.getElementById("notes").value;
-
-                const activities = JSON.parse(localStorage.getItem("activities")) || [];
-
-                const newActivity = {
-                    activityType,
-                    duration,
-                    notes,
-                    time: new Date().toISOString()  
-                };
-
-                activities.push(newActivity);
-                localStorage.setItem("activities", JSON.stringify(activities));
-
-              
-
-                
-                activityForm.reset();
-                displayRecentActivities();
-
-                
-                localStorage.setItem("refreshActivities", "true");
-            });
-        }
-
-                // ----------------------
-        // Activities (DB sync)
-        // ----------------------
-
-        function minutesBetween(startISO, endISO) {
-        if (!startISO || !endISO) return null;
-        const start = new Date(startISO);
-        const end = new Date(endISO);
-        const ms = end.getTime() - start.getTime();
-        if (!Number.isFinite(ms) || ms <= 0) return null;
-        return Math.round(ms / 60000);
-        }
-
-        async function createActivityToDb({ type, durationMinutes, notes }) {
-        const startedAt = new Date();
-        const dur = Number(durationMinutes);
-
-        const endedAt =
-            Number.isFinite(dur) && dur > 0
-            ? new Date(startedAt.getTime() + dur * 60000)
-            : undefined;
-
-        const cleanType = String(type ?? "").trim();
-        const tag = cleanType.toLowerCase();
-
-        return apiRequest("POST", "/activities", {
-            type: cleanType,
-            startedAt: startedAt.toISOString(),
-            endedAt: endedAt ? endedAt.toISOString() : undefined,
-            notes: notes?.trim() ? notes.trim() : undefined,
-            tags: tag ? [tag] : [],
-        });
-        }
-
-        async function fetchActivitiesFromDb({ from, to, type, take = 50, skip = 0 } = {}) {
-        const qs = new URLSearchParams();
-        if (from) qs.set("from", from);
-        if (to) qs.set("to", to);
-        if (type) qs.set("type", type);
-        qs.set("take", String(take));
-        qs.set("skip", String(skip));
-        return apiRequest("GET", `/activities?${qs.toString()}`);
-        }
-6
-
-    </script>
-
-    <script type="module" src="app.js"></script>
-  </body>
+  <script type="module" src="app.js"></script>
+</body>
 </html>
-

@@ -28,6 +28,8 @@ model Activity {
   longitude   Float?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  temperature Float?
+  weatherCode Int?
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   metrics     Metric[]
